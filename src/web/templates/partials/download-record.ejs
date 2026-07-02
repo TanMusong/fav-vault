@@ -1,0 +1,42 @@
+<%
+  var stateMap = {
+    1: ['下载成功', 'status-success'],
+    2: ['下载失败', 'status-failed']
+  };
+  var st = stateMap[g.state] || ['未知', ''];
+  var hasFiles = g.files && g.files.length > 0;
+  var globalIdx = idx;
+%>
+<div class="post-group">
+  <div class="post-header" onclick="togglePost(<%= globalIdx %>)">
+    <div class="post-info">
+      <span class="post-username"><%= g.author || '未知作者' %></span>
+      <span class="post-text"><%= g.desc || '无配文' %></span>
+    </div>
+    <div class="post-meta">
+      <span class="post-status <%= st[1] %>"><%= st[0] %></span>
+      <% if (hasFiles) { %>
+        <span class="post-count"><%= g.files.length %> 文件</span>
+        <span class="post-arrow" id="arrow-<%= globalIdx %>">▶</span>
+      <% } %>
+    </div>
+  </div>
+  <% if (hasFiles) { %>
+    <div class="post-files" id="files-<%= globalIdx %>">
+      <% g.files.forEach(function(f) { %>
+        <%
+          var fcls = f.fileStatus === 'failed' ? 'failed' : f.type;
+        %>
+        <div class="file-item">
+          <span class="file-name"><%= f.filename %></span>
+          <div class="file-meta">
+            <% if (f.fileSize > 0) { %>
+              <span><%= Math.round(f.fileSize / 1024) %> KB</span>
+            <% } %>
+            <span class="file-type type-<%= fcls %>"><%= f.fileStatus === 'failed' ? '失败' : f.type %></span>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  <% } %>
+</div>

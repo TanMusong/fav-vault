@@ -1,0 +1,8 @@
+node_modules
+dst
+database
+downloads
+.git
+.mimocode
+*.md
+*.log

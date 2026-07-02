@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= task.name %> - Fav Vault</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <%- include('partials/css') %>
+  <script>
+    (function() {
+      var lang = localStorage.getItem('lang') || (navigator.language.startsWith('zh') ? 'zh-CN' : 'en');
+      localStorage.setItem('lang', lang);
+      document.documentElement.lang = lang === 'zh-CN' ? 'zh-CN' : 'en';
+      var s = document.createElement('script');
+      s.src = '/locales/' + lang + '.js';
+      s.onload = function() { window._t = function(k) { return (window.I18N && window.I18N[k]) || k; };
+        window._i18nReady = true;
+        document.dispatchEvent(new Event('i18nready'));
+      };
+      document.head.appendChild(s);
+    })();
+  </script>
+  <style>
+    .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .detail-header h2 { font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+    .detail-actions { display: flex; gap: 8px; }
+    .task-site { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+    .detail-meta { display: flex; gap: 24px; font-size: 12px; color: #888; margin-bottom: 20px; padding: 12px 16px; background: #1a1a1a; border-radius: 8px; }
+    .detail-meta-item { display: flex; flex-direction: column; gap: 2px; }
+    .detail-meta-label { color: #555; font-size: 11px; }
+    .detail-meta-value { color: #ccc; }
+    .downloads-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .downloads-header h3 { font-size: 14px; font-weight: 500; color: #aaa; }
+    .post-group { background: #1a1a1a; border: 1px solid #282828; border-radius: 10px; margin-bottom: 8px; overflow: hidden; }
+    .post-header { padding: 14px 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+    .post-header:hover { background: #222; }
+    .post-info { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+    .post-username { font-size: 13px; font-weight: 500; color: #ccc; }
+    .post-text { font-size: 12px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .post-meta { font-size: 11px; color: #555; display: flex; gap: 10px; align-items: center; flex-shrink: 0; margin-left: 12px; }
+    .post-count { background: #333; padding: 1px 6px; border-radius: 8px; }
+    .post-arrow { color: #555; transition: transform 0.2s; font-size: 12px; }
+    .post-arrow.open { transform: rotate(90deg); }
+    .post-files { display: none; border-top: 1px solid #282828; }
+    .post-files.open { display: block; }
+    .file-item { padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; }
+    .file-item:last-child { border-bottom: none; }
+    .file-name { font-size: 12px; color: #aaa; }
+    .file-meta { font-size: 11px; color: #555; display: flex; gap: 10px; }
+    .file-type { font-size: 11px; padding: 1px 6px; border-radius: 4px; }
+    .type-image { background: #1d9bf022; color: #1d9bf0; }
+    .type-video { background: #fe2c5522; color: #fe2c55; }
+    .type-failed { background: #f4433622; color: #f44336; }
+    .post-status { font-size: 11px; font-weight: 500; }
+    .status-success { color: #4caf50; }
+    .status-failed { color: #f44336; }
+    .empty-downloads { text-align: center; padding: 40px; color: #555; font-size: 13px; }
+    .load-more { text-align: center; padding: 12px; }
+    .confirm-actions { display: flex; gap: 8px; justify-content: center; }
+    .confirm-actions .btn-danger { background: #f44336; color: #fff; }
+    .result-ok { color: #4caf50; }
+    .result-fail { color: #f44336; }
+  </style>
+</head>
+<body>
+  <div class="page-wrap">
+    <div class="sidebar">
+      <div class="sidebar-icon" onclick="location.href='/'" title="" data-i18n-title="nav.back">
+        <i class="fa-solid fa-arrow-left"></i>
+      </div>
+    </div>
+    <div class="main-content">
+      <div class="top-bar">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <img src="/icon.png" style="width:28px;height:28px;" alt="Fav Vault">
+        </div>
+        <div></div>
+      </div>
+      <div class="container">
+      <div class="detail-header">
+        <h2><%= task.name %> <span class="task-site" style="background:<%= siteColor %>22;color:<%= siteColor %>"><%= siteLabel %></span></h2>
+        <div class="detail-actions">
+          <button class="btn btn-primary btn-sm" onclick="runTask()" data-i18n="detail.run_now"</button>
+          <button class="btn btn-ghost btn-sm" onclick="openEditModal()" data-i18n="detail.edit"</button>
+          <button class="btn btn-ghost btn-sm" style="color:#f44" onclick="deleteTask()" data-i18n="detail.delete"</button>
+        </div>
+      </div>
+      <div class="detail-meta">
+        <div class="detail-meta-item">
+          <span class="detail-meta-label" data-i18n="detail.last_state"></span>
+          <span class="detail-meta-value">
+            <span class="detail-last-state" data-state="<%= task.last_state %>"></span>
+          </span>
+        </div>
+        <div class="detail-meta-item">
+          <span class="detail-meta-label" data-i18n="detail.next_run"></span>
+          <span class="detail-meta-value countdown" data-next="<%= task.next_run || '' %>">-</span>
+        </div>
+        <div class="detail-meta-item">
+          <span class="detail-meta-label" data-i18n="detail.interval"></span>
+          <span class="detail-meta-value"><%= task.interval < 3600 ? Math.floor(task.interval/60)+'m' : Math.floor(task.interval/3600)+'h' %></span>
+        </div>
+      </div>
+      <div class="downloads-section">
+        <div class="downloads-header">
+          <h3 data-i18n="detail.downloads"></h3>
+          <% if (downloads.length > 0) { %>
+            <button class="btn btn-ghost btn-sm" onclick="clearDownloads()" data-i18n="detail.clear"</button>
+          <% } %>
+        </div>
+        <div id="download-list" class="download-list">
+          <% if (downloads.length === 0) { %>
+            <div class="empty-downloads" data-i18n="detail.no_records"></div>
+          <% } else { %>
+            <% downloads.forEach(function(g, idx) { %>
+              <%- include('partials/download-record', { g: g, idx: idx }) %>
+            <% }); %>
+          <% } %>
+        </div>
+        <% if (downloadsTotal > 20) { %>
+          <div class="load-more">
+            <button class="btn btn-ghost btn-sm" onclick="loadMore()" data-i18n="detail.load_more"</button>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 data-i18n="modal.edit_task"></h2>
+          <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="field">
+            <label data-i18n="modal.site"></label>
+            <div class="site-select" id="f-sites">
+              <% sites.forEach(function(s) { %>
+                <div class="site-option" data-site="<%= s.name %>" onclick="selectSite('<%= s.name %>')">
+                  <i class="<%= s.icon %> site-option-icon" style="font-size:24px;color:<%= s.color %>"></i>
+                  <div class="site-option-label" style="color:<%= s.color %>" data-i18n="site.<%= s.name %>"></div>
+                </div>
+              <% }); %>
+            </div>
+            <div id="site-disabled-hint" style="display:none;color:#ff9800;font-size:13px;margin-top:10px;" data-i18n="modal.site_unsupported"></div>
+          </div>
+          <div class="field">
+            <label data-i18n="modal.interval"></label>
+            <input id="f-interval" type="number" min="10" value="<%= Math.floor(task.interval / 60) %>">
+          </div>
+          <div class="field">
+            <label data-i18n="modal.cookie_edit_hint"></label>
+            <textarea id="f-cookie" rows="4" placeholder="" data-i18n-placeholder="modal.cookie_edit_placeholder"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" onclick="closeModal()" data-i18n="modal.cancel"</button>
+          <button class="btn btn-primary" onclick="submitEdit()" data-i18n="modal.save"</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert-overlay" id="alert-overlay" onclick="closeAlert()">
+      <div class="alert-box">
+        <div class="alert-msg" id="alert-msg"></div>
+        <div class="confirm-actions" id="alert-actions">
+          <button class="alert-btn" onclick="closeAlert()" data-i18n="modal.confirm"</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const SITES = <%- JSON.stringify(sites) %>;
+      const TASK = <%- JSON.stringify(task) %>;
+      const DOWNLOADS_DATA = <%- JSON.stringify(downloads) %>;
+      const DOWNLOADS_TOTAL = <%= downloadsTotal %>;
+      let downloadOffset = 0;
+
+      function showMsg(msg) {
+        document.getElementById('alert-msg').textContent = msg;
+        document.getElementById('alert-actions').innerHTML = '<button class="alert-btn" onclick="closeAlert()" data-i18n="modal.confirm"</button>';
+        document.getElementById('alert-overlay').classList.add('active');
+      }
+      function closeAlert() { document.getElementById('alert-overlay').classList.remove('active'); }
+
+      function selectSite(name) {
+        document.querySelectorAll('.site-option').forEach(function(el) {
+          var s = SITES.find(function(s) { return s.name === el.dataset.site; });
+          var isSelected = el.dataset.site === name;
+          var color = s ? s.color : '#1d9bf0';
+          el.classList.toggle('selected', isSelected);
+          el.style.borderColor = isSelected ? color + '44' : '#333';
+          el.style.background = isSelected ? color + '08' : '';
+        });
+        var site = SITES.find(function(s) { return s.name === name; });
+        var enabled = site && site.enabled;
+        document.getElementById('f-interval').closest('.field').style.display = enabled ? '' : 'none';
+        document.getElementById('f-cookie').closest('.field').style.display = enabled ? '' : 'none';
+        document.getElementById('site-disabled-hint').style.display = enabled ? 'none' : '';
+        document.querySelector('.modal-footer .btn-primary').disabled = !enabled;
+      }
+
+      function openEditModal() {
+        selectSite(TASK.site);
+        document.getElementById('modal-overlay').classList.add('active');
+      }
+      function closeModal() { document.getElementById('modal-overlay').classList.remove('active'); }
+
+      async function submitEdit() {
+        var btn = document.querySelector('.modal-footer .btn-primary');
+        btn.textContent = _t('msg.saving');
+        btn.disabled = true;
+        var interval = parseInt(document.getElementById('f-interval').value) || 30;
+        if (interval < 10) { showMsg(_t('msg.interval_short')); btn.textContent = _t('modal.save'); btn.disabled = false; return; }
+        var cookies = document.getElementById('f-cookie').value.trim();
+        var body = { interval: interval * 60 };
+        if (cookies) body.cookies = cookies;
+        await fetch('/api/tasks/' + TASK.id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        closeModal();
+        location.reload();
+      }
+
+      async function runTask() {
+        var btn = document.querySelector('.detail-actions .btn-primary');
+        btn.textContent = _t('status.executing');
+        btn.disabled = true;
+        await fetch('/api/tasks/' + TASK.id + '/run', { method: 'POST' });
+        location.reload();
+      }
+
+      async function clearDownloads() {
+        if (!confirm(_t('msg.confirm_clear'))) return;
+        await fetch('/api/tasks/' + TASK.id + '/downloads', { method: 'DELETE' });
+        location.reload();
+      }
+
+      function togglePost(i) {
+        var files = document.getElementById('files-' + i);
+        var arrow = document.getElementById('arrow-' + i);
+        if (files) files.classList.toggle('open');
+        if (arrow) arrow.classList.toggle('open');
+      }
+
+      function deleteTask() {
+        if (!confirm(_t('msg.confirm_delete'))) return;
+        fetch('/api/tasks/' + TASK.id, { method: 'DELETE' }).then(function() { location.href = '/'; });
+      }
+
+      function updateCountdowns() {
+        document.querySelectorAll('.countdown[data-next]').forEach(function(el) {
+          var next = el.dataset.next;
+          if (!next) { el.textContent = '-'; return; }
+          var diff = new Date(next).getTime() - Date.now();
+          if (diff <= 0) { el.textContent = _t('status.executing'); return; }
+          var m = Math.floor(diff / 60000), s = Math.floor((diff % 60000) / 1000);
+          el.textContent = m > 0 ? m + 'm ' + s + 's' : s + 's';
+        });
+      }
+
+      setInterval(updateCountdowns, 1000);
+
+      document.addEventListener('i18nready', function() {
+        document.querySelectorAll('.detail-last-state').forEach(function(el) {
+          var stateMap = { '1': _t('detail.last_success'), '2': _t('status.failed'), '0': _t('status.no_last') };
+          el.textContent = stateMap[el.dataset.state] || _t('status.unknown');
+        });
+      });
+    </script>
+  <%- include('partials/footer') %>
+    </div>
+  </div>
+</body>
+</html>

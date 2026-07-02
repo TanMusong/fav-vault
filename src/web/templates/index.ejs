@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fav Vault</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <%- include('partials/css') %>
+  <script>
+    (function() {
+      var lang = localStorage.getItem('lang') || (function() {
+        var locales = ['zh-CN', 'zh-TW', 'en'];
+        var nav = navigator.language;
+        for (var i = 0; i < locales.length; i++) {
+          if (nav.startsWith(locales[i].split('-')[0])) return locales[i];
+        }
+        return 'en';
+      })();
+      localStorage.setItem('lang', lang);
+      document.documentElement.lang = lang;
+      var s = document.createElement('script');
+      s.src = '/locales/' + lang + '.js';
+      s.onload = function() {
+        window._t = function(k) { return (window.I18N && window.I18N[k]) || k; };
+        window._i18nReady = true;
+        document.dispatchEvent(new Event('i18nready'));
+      };
+      document.head.appendChild(s);
+    })();
+  </script>
+</head>
+<body>
+  <div class="page-wrap">
+    <div class="sidebar">
+      <div id="sidebar-add" class="sidebar-icon" onclick="openCreateModal()" title="" data-i18n-title="nav.new_task">
+        <i class="fa-solid fa-plus"></i>
+      </div>
+      <div id="sidebar-back" class="sidebar-icon" style="display:none" onclick="backToList()" title="" data-i18n-title="nav.back">
+        <i class="fa-solid fa-arrow-left"></i>
+      </div>
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-icon" onclick="toggleLangPicker(event)" title="" id="lang-switch">
+        <i class="fa-solid fa-globe"></i>
+      </div>
+      <div class="sidebar-icon" onclick="openLogs()" title="" data-i18n-title="nav.logs">
+        <i class="fa-solid fa-scroll"></i>
+      </div>
+      <div class="sidebar-icon" onclick="openAbout()" title="" data-i18n-title="nav.about">
+        <i class="fa-solid fa-circle-info"></i>
+      </div>
+    </div>
+      <div class="lang-picker" id="lang-picker" style="display:none;">
+        <div class="lang-picker-item" data-lang="zh-CN" onclick="pickLang('zh-CN')">简体中文</div>
+        <div class="lang-picker-item" data-lang="zh-TW" onclick="pickLang('zh-TW')">繁體中文</div>
+        <div class="lang-picker-item" data-lang="en" onclick="pickLang('en')">English</div>
+      </div>
+    <div class="main-content">
+      <div class="top-bar">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <img src="/icon.png" style="width:28px;height:28px;" alt="Fav Vault">
+        </div>
+        <div></div>
+      </div>
+      <div class="container" style="position:relative">
+        <i id="detail-bg-icon" class="task-card-icon" style="position:absolute;right:0;bottom:0;font-size:800px;opacity:0.06;pointer-events:none;z-index:0;"></i>
+        <div id="task-list-view">
+          <div id="task-list" class="task-list">
+            <% if (tasks.length === 0) { %>
+            <div class="empty-state">
+              <div style="font-size:48px;opacity:0.3;">+</div>
+              <p data-i18n="empty.no_tasks"></p>
+            </div>
+            <% } else { %>
+              <% tasks.forEach(function(t) { %>
+                <%- include('partials/task-card', { t: t, sites: sites }) %>
+              <% }); %>
+            <% } %>
+          </div>
+        </div>
+        <div id="detail-view">
+          <div class="detail-layout">
+            <div class="detail-left">
+              <h2 id="detail-name"></h2>
+              <div class="detail-meta" id="detail-meta"></div>
+              <div class="detail-actions" id="detail-actions"></div>
+            </div>
+            <div class="detail-right">
+              <div class="downloads-header">
+                <h3 data-i18n="detail.downloads"></h3>
+                <button id="detail-clear-btn" class="btn btn-ghost btn-sm" style="display:none" onclick="clearDetailDownloads()" data-i18n="detail.clear"></button>
+              </div>
+              <div id="download-list" class="download-list">
+                <div id="detail-load-more" class="load-more" style="display:none">
+                  <button class="btn btn-ghost btn-sm" onclick="loadMoreDownloads()" data-i18n="detail.load_more"></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="about-view" style="display:none;flex:1;overflow-y:auto;">
+          <div class="about-wrap">
+            <img src="/icon.png" style="width:64px;" alt="Fav Vault">
+            <h1>Fav Vault</h1>
+            <p class="about-p" data-i18n="about.tagline"></p>
+            <p class="about-meta" id="about-version">v<%= localVersion %></p>
+            <a class="about-link" href="https://github.com/TanMusong/fav-vault" target="_blank">
+              <i class="fa-brands fa-github"></i> Fav Vault on GitHub
+            </a>
+            <hr>
+            <div style="max-width:600px;width:100%;text-align:left;">
+              <h2 data-i18n="about.tutorial"></h2>
+              <ol class="about-list">
+                <li data-i18n="about.step1"></li>
+                <li data-i18n="about.step2"></li>
+                <li><span data-i18n="about.step3"></span><br><span class="about-hint"><span data-i18n="about.step3_hint"></span></span></li>
+                <li data-i18n="about.step4"></li>
+                <li data-i18n="about.step5"></li>
+                <li data-i18n="about.step6"></li>
+              </ol>
+            </div>
+            <hr>
+            <p class="about-p" data-i18n="about.donate"></p>
+            <div style="display:flex;gap:24px;flex-wrap:wrap;justify-content:center;align-items:flex-start;margin-top:8px;width:100%;">
+              <div style="text-align:center;width:250px;">
+                <img src="/qrcode_wx.png" style="width:140px;border-radius:8px;" alt="">
+                <div style="font-size:11px;color:#888;margin-top:4px;">WeChat</div>
+              </div>
+              <div style="text-align:center;width:250px;">
+                <img src="/qrcode_tron.png" style="width:140px;border-radius:8px;" alt="">
+                <div style="font-size:11px;color:#888;margin-top:4px;">Tron</div>
+                <div style="font-size:10px;color:#555;word-break:break-all;margin-top:2px;">TFbQv5LhDzbC5rUZ2ui2XTxVhMVd7Zq7Bj</div>
+              </div>
+              <div style="text-align:center;width:250px;">
+                <img src="/qrcode_ethereum.png" style="width:140px;border-radius:8px;" alt="">
+                <div style="font-size:11px;color:#888;margin-top:4px;">Ethereum</div>
+                <div style="font-size:10px;color:#555;word-break:break-all;margin-top:2px;">0xeAB5Cd10e752Ce734B8dBEB5569b6D28e146bd7C</div>
+              </div>
+            </div>
+            <div style="text-align:center;margin-top:16px;">
+              <script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script><script type='text/javascript'>kofiwidget2.init('Support me on Ko-fi', '#72a4f2', 'V0R722GUZ8');kofiwidget2.draw();</script>
+            </div>
+          </div>
+        </div>
+        <div id="logs-view" style="display:none;flex-direction:column;height:100%;overflow:hidden;">
+          <div id="logs-list" style="flex:1;overflow-y:auto;padding:0;"></div>
+        </div>
+      </div>
+
+      <div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+        <div class="modal">
+          <div class="modal-header">
+            <h2 id="modal-title" data-i18n="modal.new_task"></h2>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="field">
+              <label data-i18n="modal.site"></label>
+              <div class="site-select" id="f-sites">
+                <% sites.forEach(function(s) { %>
+                  <div class="site-option" data-site="<%= s.name %>" onclick="selectSite('<%= s.name %>')">
+                    <i class="<%= s.icon %> site-option-icon" style="font-size:24px;color:<%= s.color %>"></i>
+                    <div class="site-option-label" style="color:<%= s.color %>" data-i18n="site.<%= s.name %>"></div>
+                  </div>
+                <% }); %>
+              </div>
+              <div id="site-disabled-hint" style="display:none;color:#ff9800;font-size:13px;margin-top:10px;" data-i18n="modal.site_unsupported"></div>
+            </div>
+            <div class="field">
+              <label data-i18n="modal.interval"></label>
+              <input id="f-interval" type="number" value="30" min="10" oninput="checkInterval()">
+              <div class="field-hint" id="interval-hint" data-i18n="modal.interval_hint"></div>
+            </div>
+            <div class="field">
+              <label>Cookie</label>
+              <textarea id="f-cookie" rows="4" placeholder="" data-i18n-placeholder="modal.cookie_placeholder" style="width:100%;padding:8px 12px;background:#0f0f0f;border:1px solid #333;border-radius:8px;color:#fff;font-size:12px;font-family:monospace;resize:vertical;outline:none;"></textarea>
+            </div>
+            <div class="field">
+              <label data-i18n="modal.download_path"></label>
+              <input id="f-download-path" type="text" value="{type}/{user}/{author_id}_{author}">
+              <div style="font-size:11px;color:#666;margin-top:4px;line-height:1.6;">
+                <span data-i18n="modal.path_vars"></span>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal()" data-i18n="modal.cancel"></button>
+            <button class="btn btn-primary" onclick="submitTask()" data-i18n="modal.create"></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert-overlay" id="alert-overlay" onclick="closeAlert()">
+        <div class="alert-box">
+          <div class="alert-msg" id="alert-msg"></div>
+          <button class="alert-btn" onclick="closeAlert()" data-i18n="modal.confirm"></button>
+        </div>
+      </div>
+
+      <div class="preview-overlay" id="preview-overlay" onclick="closePreview()">
+        <span class="preview-close" onclick="closePreview()">&times;</span>
+        <span class="preview-nav preview-nav-left" onclick="event.stopPropagation();previewPrev()">&#8249;</span>
+        <div id="preview-content" onclick="event.stopPropagation()"></div>
+        <span class="preview-nav preview-nav-right" onclick="event.stopPropagation();previewNext()">&#8250;</span>
+        <div class="preview-filename" id="preview-filename"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      if (location.hash.startsWith('#detail-')) {
+        document.getElementById('task-list-view').style.display = 'none';
+        document.getElementById('detail-view').style.display = 'flex';
+        document.getElementById('sidebar-add').style.display = 'none';
+        document.getElementById('sidebar-back').style.display = 'flex';
+      } else if (location.hash === '#about') {
+        document.getElementById('task-list-view').style.display = 'none';
+        document.getElementById('about-view').style.display = 'flex';
+        document.getElementById('sidebar-add').style.display = 'none';
+        document.getElementById('sidebar-back').style.display = 'flex';
+      } else if (location.hash === '#logs') {
+        document.getElementById('task-list-view').style.display = 'none';
+        document.getElementById('logs-view').style.display = 'flex';
+        document.getElementById('sidebar-add').style.display = 'none';
+        document.getElementById('sidebar-back').style.display = 'flex';
+        setTimeout(function() { openLogs(); }, 0);
+      }
+    })();
+  </script>
+
+  <script>
+    const SITES = <%- JSON.stringify(sites) %>;
+    let TASKS = <%- JSON.stringify(tasks) %>;
+    let eventSource = null;
+
+    function renderTaskCard(t) {
+      var site = SITES.find(function(s) { return s.name === t.site; });
+      var color = site ? site.color : '#888';
+      var icon = site ? site.icon : '';
+      var siteLabel = site ? _t('site.' + site.name) : '';
+      var dotClass = t.paused ? 'status-dot-red' : 'status-dot-green';
+      var countdown = '';
+      if (!t.paused && t.nextRun) {
+        countdown = '<div class="countdown" data-next="' + t.nextRun + '" data-task-id="' + t.id + '" style="font-size:13px;">-</div>';
+      }
+      var siteBadge = siteLabel ? '<span class="task-site" style="background:' + color + '22;color:' + color + ';font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500;">' + siteLabel + '</span>' : '';
+      var downloadCount = t.downloadCount ? '<span class="download-count">' + t.downloadCount + ' ' + _t('countdown.works_unit') + '</span>' : '';
+      return '<a class="task-card" href="#" onclick="event.preventDefault();openDetail(\'' + t.id + '\')">' +
+        '<i class="' + icon + ' task-card-icon"></i>' +
+        '<div class="task-header"><div class="task-name">' +
+        '<span class="status-dot ' + dotClass + '"></span>' +
+        '<span>' + t.name + '</span>' + siteBadge +
+        '</div>' + countdown + '</div>' +
+        '<div class="task-card-actions">' + downloadCount + '</div>' +
+        '</a>';
+    }
+
+    async function refreshTaskList() {
+      var res = await fetch('/api/tasks');
+      var newData = await res.json();
+      newData.forEach(function(nt) {
+        var old = TASKS.find(function(t) { return t.id === nt.id; });
+        if (old && old.next_run && nt.next_run && new Date(old.next_run).getTime() > new Date(nt.next_run).getTime()) {
+          nt.next_run = old.next_run;
+          nt.nextRun = old.nextRun;
+        }
+      });
+      TASKS = newData;
+      var list = document.getElementById('task-list');
+      if (TASKS.length === 0) {
+        list.innerHTML = '<div class="empty-state"><div style="font-size:48px;opacity:0.3;">+</div><p data-i18n="empty.no_tasks"></p></div>';
+      } else {
+        list.innerHTML = TASKS.map(function(t) { return renderTaskCard(t); }).join('');
+      }
+    }
+
+    function showMsg(msg) {
+      document.getElementById('alert-msg').textContent = msg;
+      document.getElementById('alert-overlay').classList.add('active');
+    }
+    function closeAlert() {
+      document.getElementById('alert-overlay').classList.remove('active');
+    }
+
+    function checkInterval() {
+      const v = parseInt(document.getElementById('f-interval').value) || 0;
+      document.getElementById('interval-hint').classList.toggle('show', v > 0 && v < 10);
+    }
+
+    function selectSite(name) {
+      document.querySelectorAll('.site-option').forEach(function(el) {
+        const s = SITES.find(function(s) { return s.name === el.dataset.site; });
+        const isSelected = el.dataset.site === name;
+        const color = s ? s.color : '#1d9bf0';
+        el.classList.toggle('selected', isSelected);
+        el.style.borderColor = isSelected ? color + '44' : '#333';
+        el.style.background = isSelected ? color + '08' : '';
+      });
+      const site = SITES.find(function(s) { return s.name === name; });
+      const enabled = site && site.enabled;
+      document.getElementById('f-interval').closest('.field').style.display = enabled ? '' : 'none';
+      document.getElementById('f-cookie').closest('.field').style.display = enabled ? '' : 'none';
+      document.getElementById('site-disabled-hint').style.display = enabled ? 'none' : '';
+      document.querySelector('.modal-footer .btn-primary').disabled = !enabled;
+    }
+
+    function openCreateModal() {
+      document.getElementById('modal-title').textContent = _t('modal.new_task');
+      document.getElementById('f-interval').value = 30;
+      document.getElementById('f-cookie').value = '';
+      document.getElementById('f-download-path').value = '{type}/{user}/{author_id}_{author}';
+      document.getElementById('interval-hint').classList.remove('show');
+      document.getElementById('f-interval').closest('.field').style.display = '';
+      document.getElementById('f-cookie').closest('.field').style.display = '';
+      document.getElementById('f-download-path').closest('.field').style.display = '';
+      document.getElementById('site-disabled-hint').style.display = 'none';
+      document.querySelector('.modal-footer .btn-primary').disabled = false;
+      document.getElementById('modal-overlay').classList.add('active');
+      if (SITES.length > 0) selectSite(SITES[0].name);
+    }
+
+    function closeModal() {
+      document.getElementById('modal-overlay').classList.remove('active');
+      document.querySelectorAll('.site-option').forEach(function(el) {
+        el.style.pointerEvents = '';
+        el.style.opacity = '';
+      });
+    }
+
+    async function submitTask() {
+      const interval = parseInt(document.getElementById('f-interval').value) || 30;
+      if (!document.querySelector('.site-option.selected')) return showMsg(_t('msg.select_site'));
+      const siteName = document.querySelector('.site-option.selected').dataset.site;
+      if (interval < 10) return showMsg(_t('msg.interval_short'));
+      const cookies = document.getElementById('f-cookie')?.value?.trim() || '';
+      if (!cookies) return showMsg(_t('msg.cookie_required'));
+
+      const btn = document.querySelector('.modal-footer .btn-primary');
+      btn.textContent = _t('msg.validating');
+      btn.disabled = true;
+      document.querySelector('.modal-body').style.pointerEvents = 'none';
+      document.querySelector('.modal-body').style.opacity = '0.5';
+
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ site: siteName, interval: interval * 60, cookies, customConfigJson: { downloadPath: document.getElementById('f-download-path').value.trim() || '{type}/{user}/{author_id}_{author}' } })
+      });
+      const data = await res.json();
+      btn.textContent = _t('modal.create');
+      btn.disabled = false;
+      document.querySelector('.modal-body').style.pointerEvents = '';
+      document.querySelector('.modal-body').style.opacity = '';
+
+      if (!res.ok) { showMsg(_t('msg.create_failed') + (data.error || _t('msg.unknown_error'))); return; }
+      closeModal();
+      TASKS.unshift(data);
+      var list = document.getElementById('task-list');
+      if (list.querySelector('.empty-state')) list.innerHTML = '';
+      list.insertAdjacentHTML('afterbegin', renderTaskCard(data));
+    }
+
+    async function togglePause(taskId) {
+      const res = await fetch('/api/tasks/' + taskId + '/pause', { method: 'POST' });
+      const data = await res.json();
+      if (data.ok) refreshTaskList();
+    }
+
+    function updateCountdowns() {
+      document.querySelectorAll('.countdown[data-next]').forEach(function(el) {
+        const next = el.dataset.next;
+        if (!next) { el.textContent = '-'; return; }
+        const diff = new Date(next).getTime() - Date.now();
+        el.textContent = formatCountdown(diff);
+      });
+    }
+
+    function connectSSE() {
+      if (eventSource) eventSource.close();
+      eventSource = new EventSource('/api/events');
+
+      eventSource.addEventListener('task:started', function() { if (!currentTaskId) refreshTaskList(); });
+      eventSource.addEventListener('task:completed', function() { if (currentTaskId) { loadDownloads(); refreshDetailTask(); } else refreshTaskList(); });
+      eventSource.addEventListener('task:failed', function() { if (currentTaskId) { loadDownloads(); refreshDetailTask(); } else refreshTaskList(); });
+      eventSource.addEventListener('task:paused', function() { if (currentTaskId) refreshDetailTask(); else refreshTaskList(); });
+      eventSource.addEventListener('scheduler:updated', function(e) {
+        const data = JSON.parse(e.data);
+        const el = document.querySelector('.countdown[data-task-id="' + data.taskId + '"]');
+        if (el) el.dataset.next = data.nextRun;
+        if (currentTaskId && data.taskId === currentTaskId && currentTaskData) {
+          currentTaskData.next_run = data.nextRun;
+          renderDetailMeta();
+        }
+      });
+      eventSource.addEventListener('download:added', function(e) {
+        if (currentTaskId) {
+          var data = JSON.parse(e.data);
+          if (data.taskId !== currentTaskId) return;
+          data.post_id = data.post_id || data.id;
+          console.log('[SSE] download:added', data.post_id, 'state=' + data.state, 'files=' + (data.files?.length || 0));
+          var found = false;
+          for (var i = 0; i < detailDownloads.length; i++) {
+            if (detailDownloads[i].post_id === data.post_id) {
+              detailDownloads[i] = data;
+              found = true;
+              break;
+            }
+          }
+          if (!found) detailDownloads.unshift(data);
+          console.log('[SSE] detailDownloads count:', detailDownloads.length, 'first post_id:', detailDownloads[0]?.post_id, 'first id:', detailDownloads[0]?.id);
+          renderDownloadList(detailDownloads.length);
+          refreshDetailTask();
+        } else {
+          refreshTaskList();
+        }
+      });
+      eventSource.addEventListener('download:progress', function(e) {
+        if (!currentTaskId) return;
+        var data = JSON.parse(e.data);
+        if (data.taskId !== currentTaskId) return;
+        var matched = false;
+        for (var i = 0; i < detailDownloads.length; i++) {
+          if (detailDownloads[i].post_id === data.postId) {
+            detailDownloads[i].files = data.files;
+            if (data.state) detailDownloads[i].state = data.state;
+            updateDownloadProgress(i, data.files);
+            if (data.state && data.state !== 3) refreshDetailTask();
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) {
+          console.log('[SSE] download:progress NO MATCH for postId:', data.postId, 'detailDownloads ids:', detailDownloads.map(function(d){return d.post_id}).join(','));
+        }
+      });
+
+      eventSource.onerror = function() { setTimeout(connectSSE, 3000); };
+    }
+
+    function toggleLangPicker(e) {
+      e.stopPropagation();
+      var picker = document.getElementById('lang-picker');
+      var isOpen = picker.style.display !== 'none';
+      picker.style.display = isOpen ? 'none' : 'block';
+      if (!isOpen) {
+        var currentLang = localStorage.getItem('lang') || 'zh-CN';
+        picker.querySelectorAll('.lang-picker-item').forEach(function(item) {
+          item.classList.toggle('active', item.dataset.lang === currentLang);
+        });
+      }
+    }
+    function pickLang(lang) {
+      localStorage.setItem('lang', lang);
+      location.reload();
+    }
+    document.addEventListener('click', function() {
+      var picker = document.getElementById('lang-picker');
+      if (picker) picker.style.display = 'none';
+    });
+    document.addEventListener('i18nready', function() {
+      var el = document.getElementById('lang-switch');
+      if (el) el.title = _t('nav.switch_lang');
+    });
+    function applyI18n() {
+      document.querySelectorAll('[data-i18n]').forEach(function(el) { el.innerHTML = _t(el.dataset.i18n); });
+      document.querySelectorAll('[data-i18n-title]').forEach(function(el) { el.title = _t(el.dataset.i18nTitle); });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) { el.placeholder = _t(el.dataset.i18nPlaceholder); });
+      document.querySelectorAll('[data-i18n-alt]').forEach(function(el) { el.alt = _t(el.dataset.i18nAlt); });
+      document.querySelectorAll('.download-count[data-count]').forEach(function(el) { el.innerHTML = el.dataset.count + ' ' + _t('countdown.works_unit'); });
+    }
+    if (window._i18nReady) applyI18n();
+    else document.addEventListener('i18nready', applyI18n);
+
+    connectSSE();
+    setInterval(function() { updateCountdowns(); updateDetailCountdown(); }, 1000);
+
+    let currentTaskId = null;
+    let currentTaskData = null;
+    let detailDownloads = [];
+    let detailOffset = 0;
+    const DETAIL_LIMIT = 20;
+
+    function formatInterval(s) {
+      var h = Math.floor(s / 3600);
+      var m = Math.floor((s % 3600) / 60);
+      if (h > 0 && m > 0) return h + 'h ' + m + 'm';
+      if (h > 0) return h + 'h';
+      return m + 'm';
+    }
+
+    function formatCountdown(ms) {
+      if (ms <= 0) return _t('status.running');
+      var totalSec = Math.floor(ms / 1000);
+      var h = Math.floor(totalSec / 3600);
+      var m = Math.floor((totalSec % 3600) / 60);
+      var s = totalSec % 60;
+      if (h > 0) return h + 'h ' + m + 'm';
+      if (m > 0) return m + 'm';
+      return s + 's';
+    }
+
+    function switchView(view) {
+      document.getElementById('task-list-view').style.display = view === 'list' ? 'block' : 'none';
+      document.getElementById('detail-view').style.display = view === 'detail' ? 'flex' : 'none';
+      document.getElementById('about-view').style.display = view === 'about' ? 'flex' : 'none';
+      document.getElementById('logs-view').style.display = view === 'logs' ? 'flex' : 'none';
+      document.getElementById('sidebar-add').style.display = view === 'list' ? 'flex' : 'none';
+      document.getElementById('sidebar-back').style.display = view !== 'list' ? 'flex' : 'none';
+      document.getElementById('detail-bg-icon').style.display = view === 'detail' ? '' : 'none';
+    }
+
+    async function openDetail(taskId, fromPopState) {
+      currentTaskId = taskId;
+      detailOffset = 0;
+      detailDownloads = [];
+      document.getElementById('download-list').innerHTML = '<div id="detail-load-more" class="load-more" style="display:none"><button class="btn btn-ghost btn-sm" onclick="loadMoreDownloads()">' + _t('detail.load_more') + '</button></div>';
+      document.getElementById('detail-clear-btn').style.display = 'none';
+      if (!fromPopState) history.pushState({ view: 'detail', taskId: taskId }, '', '#detail-' + taskId);
+      switchView('detail');
+      const taskRes = await fetch('/api/tasks/' + taskId);
+      const task = await taskRes.json();
+      currentTaskData = task;
+      const site = SITES.find(function(s) { return s.name === task.site; });
+      const siteColor = site ? site.color : '#888';
+      const siteLabel = site ? _t('site.' + site.name) : task.site;
+      document.getElementById('detail-name').innerHTML = task.name + ' <span class="task-site" style="background:' + siteColor + '22;color:' + siteColor + '">' + siteLabel + '</span>';
+      var bgIcon = document.getElementById('detail-bg-icon');
+      bgIcon.className = 'task-card-icon';
+      if (site && site.icon) site.icon.split(' ').forEach(function(c) { if (c) bgIcon.classList.add(c); });
+      renderDetailMeta();
+      await loadDownloads();
+    }
+
+    function renderDetailMeta() {
+      var task = currentTaskData;
+      if (!task) return;
+      var paused = task.paused;
+      var statusColor = paused ? '#f44336' : '#4caf50';
+      var statusText = paused ? _t('status.paused') : _t('status.enabled');
+      var intervalText = formatInterval(task.interval);
+      var downloadsText = (task.downloadCount || 0) + ' ' + _t('countdown.works_unit');
+      var runText = '', runStyle = 'color:#1d9bf0;font-weight:500;font-variant-numeric:tabular-nums';
+      if (paused) {
+        runText = _t('status.paused');
+        runStyle = 'color:#888';
+      } else if (task.next_run) {
+        var diff = new Date(task.next_run).getTime() - Date.now();
+        runText = diff <= 0 ? _t('status.running') : formatCountdown(diff);
+      }
+      document.getElementById('detail-meta').innerHTML =
+        '<div class="detail-meta-item"><span class="detail-meta-label">' + _t('detail.state') + '</span><span class="detail-meta-value" style="color:' + statusColor + '">' + statusText + '</span></div>' +
+        '<div class="detail-meta-item"><span class="detail-meta-label">' + _t('detail.user_id') + '</span><span class="detail-meta-value">' + (task.userId || '-') + '</span></div>' +
+        '<div class="detail-meta-item"><span class="detail-meta-label">' + _t('detail.interval') + '</span><span class="detail-meta-value">' + intervalText + '</span></div>' +
+        '<div class="detail-meta-item"><span class="detail-meta-label">' + _t('detail.works') + '</span><span class="detail-meta-value">' + downloadsText + '</span></div>' +
+        '<div class="detail-meta-item"><span class="detail-meta-label">' + _t('detail.run') + '</span><span class="detail-meta-value" id="detail-run-status" style="' + runStyle + '">' + runText + '</span></div>';
+      var actionsHtml = '';
+      if (!paused) actionsHtml += '<button class="btn btn-primary btn-sm" onclick="runDetailTask()" title="' + _t('detail.run_now') + '"><i class="fa-solid fa-play"></i></button>';
+      actionsHtml += '<button class="btn btn-ghost btn-sm" onclick="toggleDetailPause()" title="' + (paused ? _t('detail.enable') : _t('detail.disable')) + '"><i class="fa-solid ' + (paused ? 'fa-toggle-on' : 'fa-toggle-off') + '"></i></button>';
+      actionsHtml += '<button class="btn btn-ghost btn-sm" onclick="openEditModal()" title="' + _t('detail.edit') + '"><i class="fa-solid fa-pen"></i></button>';
+      actionsHtml += '<button class="btn btn-ghost btn-sm" style="color:#f44" onclick="deleteDetailTask()" title="' + _t('detail.delete') + '"><i class="fa-solid fa-trash"></i></button>';
+      document.getElementById('detail-actions').innerHTML = actionsHtml;
+    }
+
+    function updateDetailCountdown() {
+      if (!currentTaskData || currentTaskData.paused) return;
+      var el = document.getElementById('detail-run-status');
+      if (!el) return;
+      var diff = new Date(currentTaskData.next_run || 0).getTime() - Date.now();
+      el.textContent = formatCountdown(diff);
+    }
+
+    async function loadDownloads() {
+      const res = await fetch('/api/tasks/' + currentTaskId + '/downloads?offset=' + detailOffset + '&limit=' + DETAIL_LIMIT);
+      const data = await res.json();
+      if (detailOffset === 0) detailDownloads = data.items;
+      else detailDownloads = detailDownloads.concat(data.items);
+      renderDownloadList(data.total);
+    }
+
+    function renderDownloadList(total) {
+      var list = document.getElementById('download-list');
+      var loadMoreEl = document.getElementById('detail-load-more');
+      if (!loadMoreEl) return;
+      if (detailDownloads.length === 0) {
+        list.innerHTML = '';
+        list.appendChild(loadMoreEl);
+        loadMoreEl.style.display = 'none';
+        list.insertAdjacentHTML('beforeend', '<div class="empty-downloads" data-i18n="detail.no_records"></div>');
+        document.getElementById('detail-clear-btn').style.display = 'none';
+        return;
+      }
+      document.getElementById('detail-clear-btn').style.display = '';
+      var html = '';
+      detailDownloads.forEach(function(g, i) {
+        html += renderPostGroup(g, i);
+      });
+      list.innerHTML = html;
+      list.appendChild(loadMoreEl);
+      if (detailDownloads.length < total) {
+        loadMoreEl.style.display = '';
+      } else {
+        loadMoreEl.style.display = 'none';
+      }
+    }
+
+    function renderPostGroup(g, i) {
+      var stateMap = { 1: [_t('status.completed'), 'status-success'], 2: [_t('status.failed'), 'status-failed'], 3: [_t('status.downloading'), 'status-downloading'] };
+      var isNoMedia = g.state_message === _t('status.no_media');
+      var st = isNoMedia ? [_t('status.no_media'), 'status-nomedia'] : (stateMap[g.state] || [_t('status.unknown'), '']);
+      var hasFiles = g.files && g.files.length > 0 && !isNoMedia;
+      var overallProgress = calcOverallProgress(g);
+      var html = '<div class="post-group" id="post-' + i + '"><div class="post-header" onclick="togglePost(' + i + ')">';
+      html += '<div class="post-info"><span class="post-username">' + (g.author || _t('detail.unknown_author')) + '</span>';
+      html += '<span class="post-text">' + (g.desc || _t('detail.no_desc')) + '</span></div>';
+      html += '<div class="post-meta"><span class="post-status ' + st[1] + '">' + st[0] + '</span>';
+      if (g.state === 3 && overallProgress > 0) {
+        html += '<span class="download-progress-text">' + overallProgress + '%</span>';
+      }
+      if (hasFiles) {
+        html += '<span class="post-count">' + g.files.length + ' ' + _t('detail.files') + '</span>';
+        html += '<span class="post-arrow" id="arrow-' + i + '">▶</span>';
+      }
+      html += '</div></div>';
+      if (g.state === 3 && hasFiles) {
+        var p = calcOverallProgress(g);
+        html += '<div class="post-progress-bar"><div class="post-progress-fill" id="progress-bar-' + i + '" style="width:' + p + '%"></div></div>';
+      }
+      if (hasFiles) {
+        html += '<div class="post-files' + (g.state === 3 ? ' open' : '') + '" id="files-' + i + '">';
+        g.files.forEach(function(f, fi) {
+          html += renderFileItem(f, i, fi);
+        });
+        html += '</div>';
+      }
+      html += '</div>';
+      return html;
+    }
+
+    function renderFileItem(f, postIdx, fileIdx) {
+      var fcls = f.fileStatus === 'failed' ? 'failed' : f.fileStatus === 'downloading' ? 'downloading' : f.type;
+      var postId = detailDownloads[postIdx] ? detailDownloads[postIdx].post_id : '';
+      var clickable = f.fileStatus === 'success' ? ' onclick="event.stopPropagation();openPreview(\'' + postId + '\',\'' + f.filename.replace(/'/g, "\\'") + '\')" style="cursor:pointer;color:#999;text-decoration:underline;"' : '';
+      var html = '<div class="file-item" id="file-' + postIdx + '-' + fileIdx + '">';
+      html += '<span class="file-name"' + clickable + '>' + f.filename + '</span>';
+      html += '<div class="file-meta">';
+      if (f.fileStatus === 'downloading' && f.fileExpectedSize > 0) {
+        var pct = Math.round(f.fileSize / f.fileExpectedSize * 100);
+        html += '<span class="file-progress-text">' + pct + '%</span>';
+        html += '<div class="file-progress-bar"><div class="file-progress-fill" style="width:' + pct + '%"></div></div>';
+      } else if (f.fileSize > 0) {
+        html += '<span>' + formatFileSize(f.fileSize) + '</span>';
+      }
+      html += '<span class="file-type type-' + fcls + '">' + (f.fileStatus === 'failed' ? _t('status.failed') : f.fileStatus === 'downloading' ? _t('status.downloading') : f.type) + '</span>';
+      html += '</div></div>';
+      return html;
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(2).replace(/\.?0+$/, '') + ' GB';
+      if (bytes >= 1048576) return (bytes / 1048576).toFixed(2).replace(/\.?0+$/, '') + ' MB';
+      return Math.round(bytes / 1024) + ' KB';
+    }
+
+    function calcOverallProgress(g) {
+      if (!g.files || g.files.length === 0) return 0;
+      var totalExpected = 0, totalDownloaded = 0;
+      g.files.forEach(function(f) {
+        if (f.fileExpectedSize > 0) { totalExpected += f.fileExpectedSize; totalDownloaded += f.fileSize; }
+      });
+      return totalExpected > 0 ? Math.round(totalDownloaded / totalExpected * 100) : 0;
+    }
+
+    function updateDownloadProgress(postIdx, files) {
+      var g = detailDownloads[postIdx];
+      if (!g) return;
+      g.files = files;
+      var postEl = document.getElementById('post-' + postIdx);
+      if (!postEl) return;
+      var statusEl = postEl.querySelector('.post-status');
+      if (statusEl) {
+        var stateMap = { 1: [_t('status.completed'), 'status-success'], 2: [_t('status.failed'), 'status-failed'], 3: [_t('status.downloading'), 'status-downloading'] };
+        var st = stateMap[g.state] || [_t('status.unknown'), ''];
+        statusEl.className = 'post-status ' + st[1];
+        statusEl.textContent = st[0];
+      }
+      var p = calcOverallProgress(g);
+      var progressText = postEl.querySelector('.download-progress-text');
+      if (progressText) progressText.textContent = p + '%';
+      var progressBar = document.getElementById('progress-bar-' + postIdx);
+      if (progressBar) progressBar.style.width = p + '%';
+      if (!document.getElementById('progress-bar-' + postIdx) && p > 0) {
+        var metaEl = postEl.querySelector('.post-meta');
+        if (metaEl && !metaEl.querySelector('.download-progress-text')) {
+          var span = document.createElement('span');
+          span.className = 'download-progress-text';
+          span.textContent = p + '%';
+          metaEl.insertBefore(span, metaEl.firstChild.nextSibling);
+        }
+        var headerEl = postEl.querySelector('.post-header');
+        var barHtml = '<div class="post-progress-bar"><div class="post-progress-fill" id="progress-bar-' + postIdx + '" style="width:' + p + '%"></div></div>';
+        headerEl.insertAdjacentHTML('afterend', barHtml);
+      }
+      files.forEach(function(f, fi) {
+        var fileEl = document.getElementById('file-' + postIdx + '-' + fi);
+        if (!fileEl) return;
+        var fcls = f.fileStatus === 'failed' ? 'failed' : f.fileStatus === 'downloading' ? 'downloading' : f.type;
+        var metaDiv = fileEl.querySelector('.file-meta');
+        var nameSpan = fileEl.querySelector('.file-name');
+        if (f.fileStatus === 'downloading' && f.fileExpectedSize > 0) {
+          var pct = Math.round(f.fileSize / f.fileExpectedSize * 100);
+          var progressTextEl = metaDiv.querySelector('.file-progress-text');
+          if (progressTextEl) progressTextEl.textContent = pct + '%';
+          else {
+            var newSpan = document.createElement('span');
+            newSpan.className = 'file-progress-text';
+            newSpan.textContent = pct + '%';
+            metaDiv.insertBefore(newSpan, metaDiv.firstChild);
+          }
+          var fpb = metaDiv.querySelector('.file-progress-bar');
+          if (!fpb) {
+            metaDiv.insertAdjacentHTML('afterbegin', '<div class="file-progress-bar"><div class="file-progress-fill" style="width:' + pct + '%"></div></div>');
+          } else {
+            fpb.querySelector('.file-progress-fill').style.width = pct + '%';
+          }
+          var sizeSpan = metaDiv.querySelector('span:not(.file-progress-text):not(.file-type)');
+          if (sizeSpan && sizeSpan.textContent.indexOf('KB') === -1) {
+            sizeSpan.textContent = formatFileSize(f.fileSize);
+          }
+        } else if (f.fileStatus === 'success') {
+          var typeEl = metaDiv.querySelector('.file-type');
+          if (typeEl) { typeEl.className = 'file-type type-' + f.type; typeEl.textContent = f.type; }
+          var fpb2 = metaDiv.querySelector('.file-progress-bar');
+          if (fpb2) fpb2.remove();
+          var fpt = metaDiv.querySelector('.file-progress-text');
+          if (fpt) { fpt.textContent = formatFileSize(f.fileSize); fpt.className = ''; }
+          var sizeSpan2 = metaDiv.querySelector('span:not(.file-type)');
+          if (!sizeSpan2 && f.fileSize > 0) {
+            var sizeEl = document.createElement('span');
+            sizeEl.textContent = formatFileSize(f.fileSize);
+            metaDiv.insertBefore(sizeEl, metaDiv.querySelector('.file-type'));
+          }
+          if (nameSpan && !nameSpan.getAttribute('onclick')) {
+            var postId = detailDownloads[postIdx] ? detailDownloads[postIdx].post_id : '';
+            nameSpan.setAttribute('onclick', 'event.stopPropagation();openPreview(\'' + postId + '\',\'' + f.filename.replace(/'/g, "\\'") + '\')');
+            nameSpan.style.cursor = 'pointer';
+            nameSpan.style.color = '#999';
+            nameSpan.style.textDecoration = 'underline';
+          }
+        }
+        var typeSpan = fileEl.querySelector('.file-type');
+        if (typeSpan) { typeSpan.className = 'file-type type-' + fcls; typeSpan.textContent = f.fileStatus === 'failed' ? _t('status.failed') : f.fileStatus === 'downloading' ? _t('status.downloading') : f.type; }
+      });
+      if (g.state !== 3) {
+        var progressBar2 = document.getElementById('progress-bar-' + postIdx);
+        if (progressBar2) { var pbParent = progressBar2.closest('.post-progress-bar'); if (pbParent) pbParent.remove(); }
+        var progressText2 = postEl.querySelector('.download-progress-text');
+        if (progressText2) progressText2.remove();
+      }
+    }
+
+    function backToList() {
+      switchView('list');
+      currentTaskId = null;
+      history.pushState({ view: 'list' }, '', '/');
+      refreshTaskList();
+    }
+
+    async function openAbout() {
+      switchView('about');
+      history.pushState({ view: 'about' }, '', '#about');
+      fetch('/api/version').then(function(res) { return res.json(); }).then(function(data) {
+        if (data.hasUpdate) {
+          var el = document.getElementById('about-version');
+          el.innerHTML += '<div class="detail-meta-item"><span class="detail-meta-label" data-i18n="countdown.latest"></span><span class="detail-meta-value" style="color:#4caf50">v' + data.latest + ' ' + _t('countdown.updatable') + '</span></div>';
+        }
+      }).catch(function() {});
+    }
+
+    var logsOffset = 0;
+    var logsTotal = 0;
+    var logsLoading = false;
+
+    function openLogs() {
+      switchView('logs');
+      history.pushState({ view: 'logs' }, '', '#logs');
+      logsOffset = 0;
+      logsTotal = 0;
+      document.getElementById('logs-list').innerHTML = '';
+      loadLogs(true);
+    }
+
+    async function loadLogs(reset) {
+      if (logsLoading) return;
+      if (reset) { logsOffset = 0; logsTotal = 0; document.getElementById('logs-list').innerHTML = ''; }
+      logsLoading = true;
+      try {
+        var res = await fetch('/api/logs?limit=50&offset=' + logsOffset);
+        var data = await res.json();
+        logsTotal = data.total;
+        var list = document.getElementById('logs-list');
+        data.items.forEach(function(item) {
+          var colors = { error: '#f44336', warn: '#ff9800', info: '#1d9bf0' };
+          var color = colors[item.level] || '#888';
+          var row = document.createElement('div');
+          row.style.cssText = 'padding:8px 16px;border-bottom:1px solid #1a1a1a;font-size:12px;font-family:monospace;display:flex;gap:12px;align-items:flex-start;';
+          row.innerHTML = '<span style="color:' + color + ';min-width:44px;flex-shrink:0;">[' + item.level + ']</span><span style="color:#666;min-width:140px;flex-shrink:0;">' + item.time + '</span><span style="color:#4db8ff;min-width:80px;flex-shrink:0;">' + item.taskName + '</span><span style="color:#ccc;word-break:break-all;">' + item.message + '</span>';
+          list.appendChild(row);
+        });
+        logsOffset += data.items.length;
+      } catch (e) {}
+      logsLoading = false;
+    }
+
+    document.getElementById('logs-list').addEventListener('scroll', function() {
+      var el = this;
+      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 100 && logsOffset < logsTotal) {
+        loadLogs(false);
+      }
+    });
+
+    window.addEventListener('popstate', function(e) {
+      if (e.state && e.state.view === 'detail' && e.state.taskId) {
+        currentTaskId = e.state.taskId;
+        detailOffset = 0;
+        switchView('detail');
+        openDetail(e.state.taskId, true);
+      } else if (e.state && e.state.view === 'about') {
+        switchView('about');
+      } else if (e.state && e.state.view === 'logs') {
+        openLogs();
+      } else {
+        switchView('list');
+        currentTaskId = null;
+      }
+    });
+
+    function togglePost(i) {
+      var files = document.getElementById('files-' + i);
+      var arrow = document.getElementById('arrow-' + i);
+      if (files) files.classList.toggle('open');
+      if (arrow) arrow.classList.toggle('open');
+    }
+
+    async function loadMoreDownloads() {
+      detailOffset += DETAIL_LIMIT;
+      await loadDownloads();
+    }
+
+    async function runDetailTask() {
+      if (!currentTaskId) return;
+      var btn = document.querySelector('.detail-actions .btn-primary');
+      btn.textContent = _t('status.executing');
+      btn.disabled = true;
+      await fetch('/api/tasks/' + currentTaskId + '/run', { method: 'POST' });
+    }
+
+    function deleteDetailTask() {
+      if (!currentTaskId) return;
+      if (!confirm(_t('msg.confirm_delete'))) return;
+      var deletedId = currentTaskId;
+      fetch('/api/tasks/' + deletedId, { method: 'DELETE' }).then(function() {
+        TASKS = TASKS.filter(function(t) { return t.id !== deletedId; });
+        backToList();
+        refreshTaskList();
+      });
+    }
+
+    async function clearDetailDownloads() {
+      if (!currentTaskId) return;
+      if (!confirm(_t('msg.confirm_clear'))) return;
+      await fetch('/api/tasks/' + currentTaskId + '/downloads', { method: 'DELETE' });
+      detailDownloads = [];
+      renderDownloadList(0);
+    }
+
+    function openEditModal() {
+      if (!currentTaskId || !currentTaskData) return;
+      var task = currentTaskData;
+      var site = SITES.find(function(s) { return s.name === task.site; });
+      document.getElementById('modal-title').textContent = _t('modal.edit_task');
+      document.getElementById('f-interval').value = Math.floor(task.interval / 60);
+      document.getElementById('f-cookie').value = '';
+      var pathTemplate = (task.customConfigJson && task.customConfigJson.downloadPath) || '{type}/{user}/{author_id}_{author}';
+      document.getElementById('f-download-path').value = pathTemplate;
+      document.getElementById('interval-hint').classList.remove('show');
+      document.getElementById('f-interval').closest('.field').style.display = '';
+      document.getElementById('f-cookie').closest('.field').style.display = '';
+      document.getElementById('f-download-path').closest('.field').style.display = '';
+      document.getElementById('site-disabled-hint').style.display = 'none';
+      document.querySelector('.modal-footer .btn-primary').disabled = false;
+      document.getElementById('modal-overlay').classList.add('active');
+      selectSite(task.site);
+      document.querySelectorAll('.site-option').forEach(function(el) {
+        el.style.pointerEvents = 'none';
+        el.style.opacity = '0.5';
+      });
+      var submitBtn = document.querySelector('.modal-footer .btn-primary');
+      submitBtn.textContent = _t('modal.save');
+      submitBtn.onclick = submitEdit;
+    }
+
+    async function submitEdit() {
+      if (!currentTaskId) return;
+      var interval = parseInt(document.getElementById('f-interval').value) || 30;
+      if (interval < 10) return showMsg(_t('msg.interval_short'));
+      var cookies = document.getElementById('f-cookie')?.value?.trim() || '';
+      var downloadPath = document.getElementById('f-download-path').value.trim() || '{type}/{user}/{author_id}_{author}';
+
+      var btn = document.querySelector('.modal-footer .btn-primary');
+      btn.textContent = _t('msg.saving');
+      btn.disabled = true;
+
+      var body = { interval: interval * 60, customConfigJson: { downloadPath: downloadPath } };
+      if (cookies) body.cookies = cookies;
+
+      const res = await fetch('/api/tasks/' + currentTaskId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+
+      btn.textContent = _t('modal.save');
+      btn.disabled = false;
+
+      if (!res.ok) { showMsg(_t('msg.save_failed') + (data.error || _t('msg.unknown_error'))); return; }
+      closeModal();
+      currentTaskData = data;
+      renderDetailMeta();
+    }
+
+    var previewFiles = [];
+    var previewIndex = 0;
+
+    function openPreview(postId, filename) {
+      if (!currentTaskId) return;
+      var dl = detailDownloads.find(function(d) { return d.post_id === postId; });
+      previewFiles = dl ? dl.files.filter(function(f) { return f.fileStatus === 'success'; }) : [];
+      previewIndex = Math.max(0, previewFiles.findIndex(function(f) { return f.filename === filename; }));
+      document.getElementById('preview-overlay').classList.add('active');
+      renderPreview();
+    }
+
+    function renderPreview() {
+      if (previewIndex < 0 || previewIndex >= previewFiles.length) return;
+      var f = previewFiles[previewIndex];
+      var ext = f.filename.split('.').pop().toLowerCase();
+      var url = '/api/tasks/' + currentTaskId + '/preview/' + detailDownloads.find(function(d) { return d.files.indexOf(f) >= 0; }).post_id + '/' + encodeURIComponent(f.filename);
+      var container = document.getElementById('preview-content');
+      if (['mp4', 'webm', 'ogg'].indexOf(ext) >= 0) {
+        container.innerHTML = '<video src="' + url + '" controls autoplay style="max-width:90vw;max-height:90vh;border-radius:8px;"></video>';
+      } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].indexOf(ext) >= 0) {
+        container.innerHTML = '<img src="' + url + '" style="max-width:90vw;max-height:90vh;border-radius:8px;">';
+      } else {
+        container.innerHTML = '<div style="color:#888;font-size:14px;">' + _t('msg.preview_unsupported') + '</div>';
+      }
+      document.getElementById('preview-filename').textContent = f.filename + ' (' + (previewIndex + 1) + '/' + previewFiles.length + ')';
+    }
+
+    function previewPrev() {
+      if (previewFiles.length <= 1) return;
+      var video = document.querySelector('#preview-content video');
+      if (video) video.pause();
+      previewIndex = (previewIndex - 1 + previewFiles.length) % previewFiles.length;
+      renderPreview();
+    }
+
+    function previewNext() {
+      if (previewFiles.length <= 1) return;
+      var video = document.querySelector('#preview-content video');
+      if (video) video.pause();
+      previewIndex = (previewIndex + 1) % previewFiles.length;
+      renderPreview();
+    }
+
+    function closePreview() {
+      var overlay = document.getElementById('preview-overlay');
+      overlay.classList.remove('active');
+      var video = overlay.querySelector('video');
+      if (video) video.pause();
+      document.getElementById('preview-content').innerHTML = '';
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (!document.getElementById('preview-overlay').classList.contains('active')) return;
+      if (e.key === 'ArrowLeft') { e.preventDefault(); previewPrev(); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); previewNext(); }
+      else if (e.key === 'Escape') closePreview();
+    });
+
+    async function toggleDetailPause() {
+      if (!currentTaskId) return;
+      await fetch('/api/tasks/' + currentTaskId + '/pause', { method: 'POST' });
+      currentTaskData.paused = !currentTaskData.paused;
+      renderDetailMeta();
+    }
+
+    async function refreshDetailTask() {
+      if (!currentTaskId) return;
+      const taskRes = await fetch('/api/tasks/' + currentTaskId);
+      const task = await taskRes.json();
+      if (currentTaskData && currentTaskData.next_run && task.next_run && new Date(currentTaskData.next_run) > new Date(task.next_run)) {
+        task.next_run = currentTaskData.next_run;
+      }
+      currentTaskData = task;
+      renderDetailMeta();
+    }
+
+    if (location.hash.startsWith('#detail-')) {
+      openDetail(location.hash.replace('#detail-', ''), true);
+    }
+  </script>
+</body>
+</html>

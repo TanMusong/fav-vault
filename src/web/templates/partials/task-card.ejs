@@ -1,0 +1,23 @@
+<%
+  var site = sites.find(function(s) { return s.name === t.site; });
+  var color = site ? site.color : '#888';
+  var siteLabel = site ? site.label : '';
+  var siteBadge = siteLabel ? '<span style="background:' + color + '22;color:' + color + ';font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500;">' + siteLabel + '</span>' : '';
+%>
+<a class="task-card" href="#" onclick="event.preventDefault();openDetail('<%= t.id %>')">
+  <i class="<%= site ? site.icon : '' %> task-card-icon"></i>
+  <div class="task-header">
+    <div class="task-name">
+      <span class="status-dot <%= t.paused ? 'status-dot-red' : 'status-dot-green' %>"></span>
+      <span><%= t.name %></span><%- siteBadge %>
+    </div>
+    <% if (!t.paused && t.nextRun) { %>
+      <div class="countdown" data-next="<%= t.nextRun || '' %>" data-task-id="<%= t.id %>" style="font-size:13px;">-</div>
+    <% } %>
+  </div>
+  <div class="task-card-actions">
+    <% if (t.downloadCount) { %>
+      <span class="download-count" data-count="<%= t.downloadCount %>"><%= t.downloadCount %> works</span>
+    <% } %>
+  </div>
+</a>
