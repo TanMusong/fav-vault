@@ -8,6 +8,9 @@ Fav Vault is an automation tool that converts social media "bookmark" actions in
 
 Your bookmarks are no longer just a static list — they become a continuously running content processing system.
 
+<p align="center"><img src="screenshot/screenshot_index.png" width="100%"></p>
+<p align="center"><img src="screenshot/screenshot_detail.png" width="100%"></p>
+
 ---
 
 ## ⚠️ Warning

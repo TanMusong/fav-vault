@@ -8,6 +8,9 @@ Fav Vault 是一个自动化工具，用于将社交媒体的"收藏行为"转�
 
 它让收藏夹不再只是静态列表，而是一个持续运行的内容处理系统。
 
+<p align="center"><img src="screenshot/screenshot_index.png" width="100%"></p>
+<p align="center"><img src="screenshot/screenshot_detail.png" width="100%"></p>
+
 ---
 
 ## ⚠️ 警告
