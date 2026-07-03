@@ -235,23 +235,40 @@
     let TASKS = <%- JSON.stringify(tasks) %>;
     let eventSource = null;
 
+    function escapeHtml(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function jsString(value) {
+      return JSON.stringify(String(value == null ? '' : value)).replace(/</g, '\\u003c');
+    }
+
+    function safeClass(value) {
+      return String(value == null ? '' : value).replace(/[^a-zA-Z0-9_-]/g, '');
+    }
+
     function renderTaskCard(t) {
       var site = SITES.find(function(s) { return s.name === t.site; });
-      var color = site ? site.color : '#888';
-      var icon = site ? site.icon : '';
-      var siteLabel = site ? _t('site.' + site.name) : '';
+      var color = escapeHtml(site ? site.color : '#888');
+      var icon = escapeHtml(site ? site.icon : '');
+      var siteLabel = site ? escapeHtml(_t('site.' + site.name)) : '';
       var dotClass = t.paused ? 'status-dot-red' : 'status-dot-green';
       var countdown = '';
       if (!t.paused && t.nextRun) {
-        countdown = '<div class="countdown" data-next="' + t.nextRun + '" data-task-id="' + t.id + '" style="font-size:13px;">-</div>';
+        countdown = '<div class="countdown" data-next="' + escapeHtml(t.nextRun) + '" data-task-id="' + escapeHtml(t.id) + '" style="font-size:13px;">-</div>';
       }
       var siteBadge = siteLabel ? '<span class="task-site" style="background:' + color + '22;color:' + color + ';font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500;">' + siteLabel + '</span>' : '';
-      var downloadCount = t.downloadCount ? '<span class="download-count">' + t.downloadCount + ' ' + _t('countdown.works_unit') + '</span>' : '';
-      return '<a class="task-card" href="#" onclick="event.preventDefault();openDetail(\'' + t.id + '\')">' +
+      var downloadCount = t.downloadCount ? '<span class="download-count">' + escapeHtml(t.downloadCount) + ' ' + escapeHtml(_t('countdown.works_unit')) + '</span>' : '';
+      return '<a class="task-card" href="#" onclick="event.preventDefault();openDetail(' + jsString(t.id) + ')">' +
         '<i class="' + icon + ' task-card-icon"></i>' +
         '<div class="task-header"><div class="task-name">' +
         '<span class="status-dot ' + dotClass + '"></span>' +
-        '<span>' + t.name + '</span>' + siteBadge +
+        '<span>' + escapeHtml(t.name) + '</span>' + siteBadge +
         '</div>' + countdown + '</div>' +
         '<div class="task-card-actions">' + downloadCount + '</div>' +
         '</a>';
@@ -523,9 +540,9 @@
       const task = await taskRes.json();
       currentTaskData = task;
       const site = SITES.find(function(s) { return s.name === task.site; });
-      const siteColor = site ? site.color : '#888';
-      const siteLabel = site ? _t('site.' + site.name) : task.site;
-      document.getElementById('detail-name').innerHTML = task.name + ' <span class="task-site" style="background:' + siteColor + '22;color:' + siteColor + '">' + siteLabel + '</span>';
+      const siteColor = escapeHtml(site ? site.color : '#888');
+      const siteLabel = site ? escapeHtml(_t('site.' + site.name)) : escapeHtml(task.site);
+      document.getElementById('detail-name').innerHTML = escapeHtml(task.name) + ' <span class="task-site" style="background:' + siteColor + '22;color:' + siteColor + '">' + siteLabel + '</span>';
       var bgIcon = document.getElementById('detail-bg-icon');
       bgIcon.className = 'task-card-icon';
       if (site && site.icon) site.icon.split(' ').forEach(function(c) { if (c) bgIcon.classList.add(c); });
@@ -551,10 +568,10 @@
       }
       document.getElementById('detail-meta').innerHTML =
         '<div class="detail-meta-item"><span class="detail-meta-label">' + _t('detail.state') + '</span><span class="detail-meta-value" style="color:' + statusColor + '">' + statusText + '</span></div>' +
-        '<div class="detail-meta-item"><span class="detail-meta-label">' + _t('detail.user_id') + '</span><span class="detail-meta-value">' + (task.userId || '-') + '</span></div>' +
-        '<div class="detail-meta-item"><span class="detail-meta-label">' + _t('detail.interval') + '</span><span class="detail-meta-value">' + intervalText + '</span></div>' +
-        '<div class="detail-meta-item"><span class="detail-meta-label">' + _t('detail.works') + '</span><span class="detail-meta-value">' + downloadsText + '</span></div>' +
-        '<div class="detail-meta-item"><span class="detail-meta-label">' + _t('detail.run') + '</span><span class="detail-meta-value" id="detail-run-status" style="' + runStyle + '">' + runText + '</span></div>';
+        '<div class="detail-meta-item"><span class="detail-meta-label">' + escapeHtml(_t('detail.user_id')) + '</span><span class="detail-meta-value">' + escapeHtml(task.userId || '-') + '</span></div>' +
+        '<div class="detail-meta-item"><span class="detail-meta-label">' + escapeHtml(_t('detail.interval')) + '</span><span class="detail-meta-value">' + escapeHtml(intervalText) + '</span></div>' +
+        '<div class="detail-meta-item"><span class="detail-meta-label">' + escapeHtml(_t('detail.works')) + '</span><span class="detail-meta-value">' + escapeHtml(downloadsText) + '</span></div>' +
+        '<div class="detail-meta-item"><span class="detail-meta-label">' + escapeHtml(_t('detail.run')) + '</span><span class="detail-meta-value" id="detail-run-status" style="' + runStyle + '">' + escapeHtml(runText) + '</span></div>';
       var actionsHtml = '';
       if (!paused) actionsHtml += '<button class="btn btn-primary btn-sm" onclick="runDetailTask()" title="' + _t('detail.run_now') + '"><i class="fa-solid fa-play"></i></button>';
       actionsHtml += '<button class="btn btn-ghost btn-sm" onclick="toggleDetailPause()" title="' + (paused ? _t('detail.enable') : _t('detail.disable')) + '"><i class="fa-solid ' + (paused ? 'fa-toggle-on' : 'fa-toggle-off') + '"></i></button>';
@@ -612,9 +629,9 @@
       var hasFiles = g.files && g.files.length > 0 && !isNoMedia;
       var overallProgress = calcOverallProgress(g);
       var html = '<div class="post-group" id="post-' + i + '"><div class="post-header" onclick="togglePost(' + i + ')">';
-      html += '<div class="post-info"><span class="post-username">' + (g.author || _t('detail.unknown_author')) + '</span>';
-      html += '<span class="post-text">' + (g.desc || _t('detail.no_desc')) + '</span></div>';
-      html += '<div class="post-meta"><span class="post-status ' + st[1] + '">' + st[0] + '</span>';
+      html += '<div class="post-info"><span class="post-username">' + escapeHtml(g.author || _t('detail.unknown_author')) + '</span>';
+      html += '<span class="post-text">' + escapeHtml(g.desc || _t('detail.no_desc')) + '</span></div>';
+      html += '<div class="post-meta"><span class="post-status ' + safeClass(st[1]) + '">' + escapeHtml(st[0]) + '</span>';
       if (g.state === 3 && overallProgress > 0) {
         html += '<span class="download-progress-text">' + overallProgress + '%</span>';
       }
@@ -639,11 +656,11 @@
     }
 
     function renderFileItem(f, postIdx, fileIdx) {
-      var fcls = f.fileStatus === 'failed' ? 'failed' : f.fileStatus === 'downloading' ? 'downloading' : f.type;
+      var fcls = safeClass(f.fileStatus === 'failed' ? 'failed' : f.fileStatus === 'downloading' ? 'downloading' : f.type);
       var postId = detailDownloads[postIdx] ? detailDownloads[postIdx].post_id : '';
-      var clickable = f.fileStatus === 'success' ? ' onclick="event.stopPropagation();openPreview(\'' + postId + '\',\'' + f.filename.replace(/'/g, "\\'") + '\')" style="cursor:pointer;color:#999;text-decoration:underline;"' : '';
+      var clickable = f.fileStatus === 'success' ? ' onclick="event.stopPropagation();openPreview(' + jsString(postId) + ',' + jsString(f.filename) + ')" style="cursor:pointer;color:#999;text-decoration:underline;"' : '';
       var html = '<div class="file-item" id="file-' + postIdx + '-' + fileIdx + '">';
-      html += '<span class="file-name"' + clickable + '>' + f.filename + '</span>';
+      html += '<span class="file-name"' + clickable + '>' + escapeHtml(f.filename) + '</span>';
       html += '<div class="file-meta">';
       if (f.fileStatus === 'downloading' && f.fileExpectedSize > 0) {
         var pct = Math.round(f.fileSize / f.fileExpectedSize * 100);
@@ -652,7 +669,7 @@
       } else if (f.fileSize > 0) {
         html += '<span>' + formatFileSize(f.fileSize) + '</span>';
       }
-      html += '<span class="file-type type-' + fcls + '">' + (f.fileStatus === 'failed' ? _t('status.failed') : f.fileStatus === 'downloading' ? _t('status.downloading') : f.type) + '</span>';
+      html += '<span class="file-type type-' + fcls + '">' + escapeHtml(f.fileStatus === 'failed' ? _t('status.failed') : f.fileStatus === 'downloading' ? _t('status.downloading') : f.type) + '</span>';
       html += '</div></div>';
       return html;
     }
@@ -705,7 +722,7 @@
       files.forEach(function(f, fi) {
         var fileEl = document.getElementById('file-' + postIdx + '-' + fi);
         if (!fileEl) return;
-        var fcls = f.fileStatus === 'failed' ? 'failed' : f.fileStatus === 'downloading' ? 'downloading' : f.type;
+        var fcls = safeClass(f.fileStatus === 'failed' ? 'failed' : f.fileStatus === 'downloading' ? 'downloading' : f.type);
         var metaDiv = fileEl.querySelector('.file-meta');
         var nameSpan = fileEl.querySelector('.file-name');
         if (f.fileStatus === 'downloading' && f.fileExpectedSize > 0) {
@@ -730,7 +747,7 @@
           }
         } else if (f.fileStatus === 'success') {
           var typeEl = metaDiv.querySelector('.file-type');
-          if (typeEl) { typeEl.className = 'file-type type-' + f.type; typeEl.textContent = f.type; }
+          if (typeEl) { typeEl.className = 'file-type type-' + safeClass(f.type); typeEl.textContent = f.type; }
           var fpb2 = metaDiv.querySelector('.file-progress-bar');
           if (fpb2) fpb2.remove();
           var fpt = metaDiv.querySelector('.file-progress-text');
@@ -743,7 +760,7 @@
           }
           if (nameSpan && !nameSpan.getAttribute('onclick')) {
             var postId = detailDownloads[postIdx] ? detailDownloads[postIdx].post_id : '';
-            nameSpan.setAttribute('onclick', 'event.stopPropagation();openPreview(\'' + postId + '\',\'' + f.filename.replace(/'/g, "\\'") + '\')');
+            nameSpan.setAttribute('onclick', 'event.stopPropagation();openPreview(' + jsString(postId) + ',' + jsString(f.filename) + ')');
             nameSpan.style.cursor = 'pointer';
             nameSpan.style.color = '#999';
             nameSpan.style.textDecoration = 'underline';
@@ -773,7 +790,7 @@
       fetch('/api/version').then(function(res) { return res.json(); }).then(function(data) {
         if (data.hasUpdate) {
           var el = document.getElementById('about-version');
-          el.innerHTML += '<div class="detail-meta-item"><span class="detail-meta-label" data-i18n="countdown.latest"></span><span class="detail-meta-value" style="color:#4caf50">v' + data.latest + ' ' + _t('countdown.updatable') + '</span></div>';
+          el.innerHTML += '<div class="detail-meta-item"><span class="detail-meta-label" data-i18n="countdown.latest"></span><span class="detail-meta-value" style="color:#4caf50">v' + escapeHtml(data.latest) + ' ' + escapeHtml(_t('countdown.updatable')) + '</span></div>';
         }
       }).catch(function() {});
     }
@@ -805,7 +822,7 @@
           var color = colors[item.level] || '#888';
           var row = document.createElement('div');
           row.style.cssText = 'padding:8px 16px;border-bottom:1px solid #1a1a1a;font-size:12px;font-family:monospace;display:flex;gap:12px;align-items:flex-start;';
-          row.innerHTML = '<span style="color:' + color + ';min-width:44px;flex-shrink:0;">[' + item.level + ']</span><span style="color:#666;min-width:140px;flex-shrink:0;">' + item.time + '</span><span style="color:#4db8ff;min-width:80px;flex-shrink:0;">' + item.taskName + '</span><span style="color:#ccc;word-break:break-all;">' + item.message + '</span>';
+          row.innerHTML = '<span style="color:' + color + ';min-width:44px;flex-shrink:0;">[' + escapeHtml(item.level) + ']</span><span style="color:#666;min-width:140px;flex-shrink:0;">' + escapeHtml(item.time) + '</span><span style="color:#4db8ff;min-width:80px;flex-shrink:0;">' + escapeHtml(item.taskName) + '</span><span style="color:#ccc;word-break:break-all;">' + escapeHtml(item.message) + '</span>';
           list.appendChild(row);
         });
         logsOffset += data.items.length;
@@ -950,11 +967,11 @@
       var url = '/api/tasks/' + currentTaskId + '/preview/' + detailDownloads.find(function(d) { return d.files.indexOf(f) >= 0; }).post_id + '/' + encodeURIComponent(f.filename);
       var container = document.getElementById('preview-content');
       if (['mp4', 'webm', 'ogg'].indexOf(ext) >= 0) {
-        container.innerHTML = '<video src="' + url + '" controls autoplay style="max-width:90vw;max-height:90vh;border-radius:8px;"></video>';
+        container.innerHTML = '<video src="' + escapeHtml(url) + '" controls autoplay style="max-width:90vw;max-height:90vh;border-radius:8px;"></video>';
       } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].indexOf(ext) >= 0) {
-        container.innerHTML = '<img src="' + url + '" style="max-width:90vw;max-height:90vh;border-radius:8px;">';
+        container.innerHTML = '<img src="' + escapeHtml(url) + '" style="max-width:90vw;max-height:90vh;border-radius:8px;">';
       } else {
-        container.innerHTML = '<div style="color:#888;font-size:14px;">' + _t('msg.preview_unsupported') + '</div>';
+        container.innerHTML = '<div style="color:#888;font-size:14px;">' + escapeHtml(_t('msg.preview_unsupported')) + '</div>';
       }
       document.getElementById('preview-filename').textContent = f.filename + ' (' + (previewIndex + 1) + '/' + previewFiles.length + ')';
     }
