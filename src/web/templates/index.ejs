@@ -1014,9 +1014,13 @@
       renderDetailMeta();
     }
 
-    if (location.hash.startsWith('#detail-')) {
-      openDetail(location.hash.replace('#detail-', ''), true);
+    function initDetailFromHash() {
+      if (location.hash.startsWith('#detail-')) {
+        openDetail(location.hash.replace('#detail-', ''), true);
+      }
     }
+    if (window._i18nReady) initDetailFromHash();
+    else document.addEventListener('i18nready', initDetailFromHash);
   </script>
 </body>
 </html>
