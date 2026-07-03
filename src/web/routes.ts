@@ -192,7 +192,7 @@ export function setupRoutes(app: express.Application): void {
     const paused = store.toggleTaskPause(taskId);
     if (paused) {
       clearTask(taskId);
-      store.setTaskRunState(taskId, { nextRun: undefined });
+      store.setTaskRunState(taskId, { nextRun: null });
     } else {
       rescheduleTask(taskId);
     }

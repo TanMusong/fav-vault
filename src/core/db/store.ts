@@ -181,11 +181,11 @@ function updateTask(id: string, data: Partial<{ name: string; userId: string; in
 	return getTask(id);
 }
 
-function setTaskRunState(id: string, state: { last_state?: number; nextRun?: string }): void {
+function setTaskRunState(id: string, state: { last_state?: number; nextRun?: string | null }): void {
 	const fields: string[] = [];
 	const values: unknown[] = [];
 	if (state.last_state !== undefined) { fields.push('last_state = ?'); values.push(state.last_state); }
-	if (state.nextRun !== undefined) { fields.push('next_run = ?'); values.push(state.nextRun); }
+	if ('nextRun' in state) { fields.push('next_run = ?'); values.push(state.nextRun); }
 	if (fields.length === 0) return;
 	values.push(id);
 	rootDb.prepare(`UPDATE tasks SET ${fields.join(', ')} WHERE id = ?`).run(...values);
