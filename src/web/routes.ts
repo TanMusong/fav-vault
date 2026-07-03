@@ -7,6 +7,7 @@ import { scheduleTask, clearTask, rescheduleTask } from '../core/scheduler/sched
 import { verifyTask, isRunning } from '../core/browser/runner';
 import { events } from '../core/events';
 import { config, getGlobal } from '../core/config/manager';
+import { resolveDownloadDir, DEFAULT_PATH_TEMPLATE } from '../core/downloader/path';
 
 const TAG_URLS = [
 	'https://gh-proxy.org/https://api.github.com/repos/TanMusong/fav-vault/tags?per_page=1',
@@ -58,6 +59,16 @@ async function fetchLatestTag(): Promise<string | null> {
 
 function getId(req: Request): string {
   return Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+}
+
+function validateDownloadPathTemplate(template: string): void {
+  resolveDownloadDir(config.downloadDir, template || DEFAULT_PATH_TEMPLATE, {
+    type: 'site',
+    user: 'user',
+    id: 'id',
+    author: 'author',
+    author_id: 'author_id'
+  });
 }
 
 const templatesDir = path.join(__dirname, 'templates');
@@ -118,6 +129,12 @@ export function setupRoutes(app: express.Application): void {
     const body = req.body as { site?: string; interval?: number; cookies?: string; customConfigJson?: Record<string, unknown> };
     if (!body.site) { res.status(400).json({ error: 'site required' }); return; }
     if (!body.cookies) { res.status(400).json({ error: 'cookies required' }); return; }
+    try {
+      validateDownloadPathTemplate(body.customConfigJson?.downloadPath as string || DEFAULT_PATH_TEMPLATE);
+    } catch (err) {
+      res.status(400).json({ error: (err as Error).message });
+      return;
+    }
     const task = store.addTask({ name: body.site, site: body.site, interval: body.interval || 1800, cookies: body.cookies, customConfigJson: body.customConfigJson });
     try {
       const { username, userId } = await verifyTask(task.id);
@@ -134,6 +151,15 @@ export function setupRoutes(app: express.Application): void {
   });
 
   app.put('/api/tasks/:id', (req: Request, res: Response) => {
+    const body = req.body as { customConfigJson?: Record<string, unknown> };
+    if (body.customConfigJson?.downloadPath !== undefined) {
+      try {
+        validateDownloadPathTemplate(body.customConfigJson.downloadPath as string);
+      } catch (err) {
+        res.status(400).json({ error: (err as Error).message });
+        return;
+      }
+    }
     const updated = store.updateTask(getId(req), req.body);
     if (!updated) { res.status(404).json({ error: 'Not found' }); return; }
     store.addLog(getId(req), 'info', 'Task config updated');
@@ -209,11 +235,11 @@ export function setupRoutes(app: express.Application): void {
     const dl = downloads.find(d => d.post_id === postId);
     if (!dl) { res.status(404).json({ error: 'download not found' }); return; }
     const site = getAllSites().find(s => s.name === task.site);
-    const { resolveDownloadDir, DEFAULT_PATH_TEMPLATE } = require('../core/downloader/path');
     const pathTemplate = (task.customConfigJson as Record<string, unknown>)?.downloadPath as string || DEFAULT_PATH_TEMPLATE;
     const userDir = resolveDownloadDir(config.downloadDir, pathTemplate, {
       type: site ? site.label : task.site,
       user: task.name,
+      id: task.userId || '',
       author: dl.author || 'unknown',
       author_id: dl.author_id || 'unknown'
     });
