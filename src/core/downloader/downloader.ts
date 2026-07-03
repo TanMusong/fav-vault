@@ -14,7 +14,7 @@ export function normalizeFilename(name: string, options: { replacementChar?: str
 		extension = name.slice(lastDotIndex);
 	}
 
-	const illegalChars = /[\\/:*?"<>|\x00-\x9f\u00a0\u200b\u200c\u200d\u2060\ufeff]/g;
+	const illegalChars = /[\\/:*?"<>|\x00-\x1f\u007f\u00a0\u200b\u200c\u200d\u2060\ufeff]/g;
 	let cleanBase = baseName.replace(illegalChars, replacementChar);
 
 	const reservedNames = /^(CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])(\..*)?$/i;
