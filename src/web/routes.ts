@@ -71,6 +71,13 @@ function validateDownloadPathTemplate(template: string): void {
   });
 }
 
+function parseTaskInterval(value: unknown, fallback: number): number | null {
+  if (value === undefined) return fallback;
+  const interval = Number(value);
+  if (!Number.isFinite(interval) || interval < 600) return null;
+  return Math.floor(interval);
+}
+
 const templatesDir = path.join(__dirname, 'templates');
 
 export function setupRoutes(app: express.Application): void {
@@ -129,13 +136,15 @@ export function setupRoutes(app: express.Application): void {
     const body = req.body as { site?: string; interval?: number; cookies?: string; customConfigJson?: Record<string, unknown> };
     if (!body.site) { res.status(400).json({ error: 'site required' }); return; }
     if (!body.cookies) { res.status(400).json({ error: 'cookies required' }); return; }
+    const interval = parseTaskInterval(body.interval, 1800);
+    if (interval === null) { res.status(400).json({ error: 'interval must be at least 600 seconds' }); return; }
     try {
       validateDownloadPathTemplate(body.customConfigJson?.downloadPath as string || DEFAULT_PATH_TEMPLATE);
     } catch (err) {
       res.status(400).json({ error: (err as Error).message });
       return;
     }
-    const task = store.addTask({ name: body.site, site: body.site, interval: body.interval || 1800, cookies: body.cookies, customConfigJson: body.customConfigJson });
+    const task = store.addTask({ name: body.site, site: body.site, interval, cookies: body.cookies, customConfigJson: body.customConfigJson });
     try {
       const { username, userId } = await verifyTask(task.id);
       store.updateTask(task.id, { name: username, userId });
@@ -151,7 +160,12 @@ export function setupRoutes(app: express.Application): void {
   });
 
   app.put('/api/tasks/:id', (req: Request, res: Response) => {
-    const body = req.body as { customConfigJson?: Record<string, unknown> };
+    const body = req.body as { interval?: number; customConfigJson?: Record<string, unknown> };
+    if (body.interval !== undefined) {
+      const interval = parseTaskInterval(body.interval, 1800);
+      if (interval === null) { res.status(400).json({ error: 'interval must be at least 600 seconds' }); return; }
+      body.interval = interval;
+    }
     if (body.customConfigJson?.downloadPath !== undefined) {
       try {
         validateDownloadPathTemplate(body.customConfigJson.downloadPath as string);
