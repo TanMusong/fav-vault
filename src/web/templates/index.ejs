@@ -415,19 +415,8 @@
         if (currentTaskId) {
           var data = JSON.parse(e.data);
           if (data.taskId !== currentTaskId) return;
-          data.post_id = data.post_id || data.id;
-          console.log('[SSE] download:added', data.post_id, 'state=' + data.state, 'files=' + (data.files?.length || 0));
-          var found = false;
-          for (var i = 0; i < detailDownloads.length; i++) {
-            if (detailDownloads[i].post_id === data.post_id) {
-              detailDownloads[i] = data;
-              found = true;
-              break;
-            }
-          }
-          if (!found) detailDownloads.unshift(data);
-          console.log('[SSE] detailDownloads count:', detailDownloads.length, 'first post_id:', detailDownloads[0]?.post_id, 'first id:', detailDownloads[0]?.id);
-          renderDownloadList(detailDownloads.length);
+          detailOffset = 0;
+          loadDownloads();
           refreshDetailTask();
         } else {
           refreshTaskList();
