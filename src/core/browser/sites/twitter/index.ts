@@ -5,7 +5,7 @@ import { resolveDownloadDir, DEFAULT_PATH_TEMPLATE } from '../../../downloader/p
 import { downloadFile } from '../../../downloader/downloader';
 import { config } from '../../../config/manager';
 import { TwitterItem, TwitterApiResponse, parseApiResponse, getMediaUrls } from './twitter-api';
-import { unbookmarkPage } from './unbookmark';
+import { unbookmarkPage, type UnbookmarkResult } from './unbookmark';
 import path from 'path';
 import fs from 'fs';
 import { runPool, type Executable } from '../../../utils/pool';
@@ -131,9 +131,10 @@ class TwitterSite extends BaseSite {
 
 		const { username } = await this.checkLogin(page);
 		if (!username) {
-			ctx.addLog('warn', 'X login expired');
+			ctx.addLog('warn', 'X login expired - checkLogin returned empty username');
 			return { state: 0, message: '登录失效', downloaded: 0, failed: 0, total: 0, duration: Date.now() - startTime };
 		}
+		ctx.addLog('info', `X login OK: ${username}`);
 
 		let downloaded = 0, failed = 0;
 		const skipIds: string[] = [];
@@ -141,15 +142,18 @@ class TwitterSite extends BaseSite {
 		const handleUnbookmark = async (item: TwitterItem) => {
 			const actionPage = await browser.newPage();
 			await actionPage.setViewport({ width: 1280, height: 800 });
-			let ok = false;
+			let result: UnbookmarkResult = { ok: false, reason: 'unknown' };
 			try {
-				ok = await unbookmarkPage(actionPage, item.detailUrl);
+				result = await unbookmarkPage(actionPage, item.detailUrl);
+			} catch (err) {
+				result = { ok: false, reason: 'exception', detail: (err as Error).message };
 			} finally {
 				await actionPage.close().catch(() => {});
 			}
-			if (!ok) {
-				ctx.addLog('error', `Unbookmark failed: ${item.id}`);
-				ctx.updateDownload(item.id, { state: DownloadStatus.Failed, stateMessage: 'unbookmark failed' });
+			if (!result.ok) {
+				const detailInfo = result.detail ? ` | detail: ${result.detail}` : '';
+				ctx.addLog('error', `Unbookmark failed: ${item.id} (${item.authorId}) | reason: ${result.reason}${detailInfo}`);
+				ctx.updateDownload(item.id, { state: DownloadStatus.Failed, stateMessage: `unbookmark: ${result.reason}` });
 				failed++;
 			}
 		};
@@ -161,6 +165,7 @@ class TwitterSite extends BaseSite {
 			}
 			const mediaUrls = getMediaUrls(item);
 			if (mediaUrls.length === 0) {
+				ctx.addLog('info', `No media: ${item.id} (${item.authorId})`);
 				ctx.addDownload({
 					id: item.id, author: item.author, authorId: item.authorId, desc: item.desc,
 					state: DownloadStatus.Success, stateMessage: '无媒体',
@@ -217,12 +222,13 @@ class TwitterSite extends BaseSite {
 				const allSuccess = files.length > 0 && files.every(f => f.fileStatus === 'success');
 				if (allSuccess) {
 					ctx.updateDownload(item.id, { state: DownloadStatus.Success, stateMessage: '', files });
-					ctx.addLog('info', `Downloaded: ${item.author}/${item.id}`);
+					ctx.addLog('info', `Downloaded: ${item.author} (${item.authorId})/${item.id} | ${files.length} files`);
 					downloaded++;
 					if (item.bookmarked) await handleUnbookmark(item);
 				} else {
-					ctx.updateDownload(item.id, { state: DownloadStatus.Failed, stateMessage: 'partial download', files });
-					ctx.addLog('warn', `Partial download failed: ${item.id}`);
+					const failedFiles = files.filter(f => f.fileStatus !== 'success').map(f => `${f.filename}(${f.fileStatus})`).join(', ');
+					ctx.updateDownload(item.id, { state: DownloadStatus.Failed, stateMessage: `partial: ${failedFiles}`, files });
+					ctx.addLog('warn', `Partial download failed: ${item.id} (${item.authorId}) | failed files: ${failedFiles}`);
 					failed++;
 					skipIds.push(item.id);
 				}

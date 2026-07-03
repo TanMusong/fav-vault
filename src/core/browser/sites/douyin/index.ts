@@ -102,6 +102,7 @@ class DouyinSite extends BaseSite {
 			}
 			const downloadUrls = getDownloadUrls(item);
 			if (downloadUrls.length === 0) {
+				ctx.addLog('warn', `No download URLs: ${item.id} (${item.author})`);
 				ctx.addDownload({ id: item.id, author: item.author, authorId: String(item.author_id), desc: item.desc, state: DownloadStatus.Failed, stateMessage: 'no download urls', files: [], dataJson: { detailUrl, raw: item.raw } });
 				skipIds.push(item.id);
 				failed++;
@@ -151,11 +152,12 @@ class DouyinSite extends BaseSite {
 				const allSuccess = files.length > 0 && files.every(f => f.fileStatus === 'success');
 				if (allSuccess) {
 					ctx.updateDownload(item.id, { state: DownloadStatus.Success, stateMessage: '', files });
-					ctx.addLog('info', `Downloaded: ${item.author}/${item.id}`);
+					ctx.addLog('info', `Downloaded: ${item.author} (${item.author_id})/${item.id} | ${files.length} files`);
 					downloaded++;
 				} else {
-					ctx.updateDownload(item.id, { state: DownloadStatus.Failed, stateMessage: 'partial download', files });
-					ctx.addLog('warn', `Partial download failed: ${item.id}`);
+					const failedFiles = files.filter(f => f.fileStatus !== 'success').map(f => `${f.filename}(${f.fileStatus})`).join(', ');
+					ctx.updateDownload(item.id, { state: DownloadStatus.Failed, stateMessage: `partial: ${failedFiles}`, files });
+					ctx.addLog('warn', `Partial download failed: ${item.id} (${item.author}) | failed files: ${failedFiles}`);
 					failed++;
 					skipIds.push(item.id);
 				}

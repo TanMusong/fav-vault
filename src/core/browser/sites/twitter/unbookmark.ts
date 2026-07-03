@@ -2,8 +2,8 @@ import type { Page } from 'puppeteer-core';
 
 let cachedQueryId: string | null = null;
 
-async function extractQueryId(page: Page, detailUrl: string): Promise<string | null> {
-	if (cachedQueryId) { console.log('[twitter] using cached queryId:', cachedQueryId); return cachedQueryId; }
+async function extractQueryId(page: Page, detailUrl: string): Promise<{ queryId: string | null; reason?: string }> {
+	if (cachedQueryId) return { queryId: cachedQueryId };
 
 	const queryId = await new Promise<string | null>((resolve) => {
 		let found: string | null = null;
@@ -14,7 +14,7 @@ async function extractQueryId(page: Page, detailUrl: string): Promise<string | n
 			try {
 				const text = await res.text();
 				const match = text.match(/queryId\s*:\s*"([A-Za-z0-9_-]+)"\s*,\s*operationName\s*:\s*"DeleteBookmark"/);
-				if (match && !found) { found = match[1]; console.log('[twitter] queryId found in:', url.slice(-60)); }
+				if (match && !found) { found = match[1]; }
 			} catch (_e) { /* */ }
 		};
 
@@ -24,34 +24,43 @@ async function extractQueryId(page: Page, detailUrl: string): Promise<string | n
 			setTimeout(() => {
 				page.off('response', handler);
 				if (found) cachedQueryId = found;
-				console.log('[twitter] extractQueryId result:', found);
 				resolve(found);
 			}, 10000);
 		}).catch(() => {
 			page.off('response', handler);
-			console.log('[twitter] extractQueryId: navigation failed');
 			resolve(found);
 		});
 	});
 
-	return queryId;
+	return { queryId, reason: queryId ? undefined : 'failed to extract queryId from page' };
 }
 
-export async function unbookmarkPage(page: Page, detailUrl: string): Promise<boolean> {
-	const tweetId = detailUrl.match(/\/status\/(\d+)/)?.[1];
-	if (!tweetId) return false;
+export interface UnbookmarkResult {
+	ok: boolean;
+	reason?: string;
+	detail?: string;
+}
 
-	const queryId = await extractQueryId(page, detailUrl);
-	console.log(`[twitter] queryId: ${queryId}`);
-	if (!queryId) return false;
+export async function unbookmarkPage(page: Page, detailUrl: string): Promise<UnbookmarkResult> {
+	const tweetId = detailUrl.match(/\/status\/(\d+)/)?.[1];
+	if (!tweetId) return { ok: false, reason: 'invalid tweet URL', detail: detailUrl };
+
+	const { queryId, reason: queryIdReason } = await extractQueryId(page, detailUrl);
+	if (!queryId) return { ok: false, reason: queryIdReason || 'queryId is null' };
+
+	// Navigate to x.com to ensure cookies are accessible
+	await page.goto('https://x.com', { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {});
+	await new Promise<void>(r => setTimeout(r, 1000));
+
+	// Read ct0 via Puppeteer API instead of document.cookie (avoids SecurityError)
+	const allCookies = await page.cookies('https://x.com').catch(() => []);
+	const ct0 = allCookies.find(c => c.name === 'ct0')?.value || '';
+	if (!ct0) return { ok: false, reason: 'missing_csrf_token', detail: 'ct0 cookie not found on x.com' };
 
 	for (let retry = 0; retry < 3; retry++) {
 		await new Promise<void>(r => setTimeout(r, 1000));
 		try {
-			const result = await page.evaluate(async ({ tweetId, queryId }) => {
-				const ct0 = document.cookie.match(/ct0=([^;]+)/)?.[1] || '';
-				if (!ct0) return { ok: false, text: 'no ct0' };
-
+			const result = await page.evaluate(async ({ tweetId, queryId, ct0 }) => {
 				const resp = await fetch('/i/api/graphql/' + queryId + '/DeleteBookmark', {
 					method: 'POST',
 					headers: {
@@ -73,13 +82,28 @@ export async function unbookmarkPage(page: Page, detailUrl: string): Promise<boo
 					})
 				});
 				const text = await resp.text();
-				return { ok: resp.status === 200 && text.includes('tweet_bookmark_delete'), status: resp.status, text };
-			}, { tweetId, queryId });
+				const ok = resp.status === 200 && text.includes('tweet_bookmark_delete');
+				let reason: string | undefined;
+				if (!ok) {
+					if (resp.status === 403) reason = 'forbidden (CSRF or auth issue)';
+					else if (resp.status === 404) reason = 'not found (tweet may not exist)';
+					else if (resp.status === 429) reason = 'rate limited';
+					else if (resp.status >= 500) reason = 'server error';
+					else reason = `unexpected status ${resp.status}`;
+				}
+				return { ok, status: resp.status, text: text.slice(0, 500), reason };
+			}, { tweetId, queryId, ct0 });
 
-			console.log(`[twitter] unbookmark response: ${result.status} ${result.text?.slice(0, 200)}`);
-			if (result.ok) return true;
+			if (result.ok) return { ok: true };
 			cachedQueryId = null;
-		} catch (_e) { /* */ }
+			if (retry === 2) {
+				return { ok: false, reason: result.reason || 'unknown', detail: `status=${result.status} body=${result.text?.slice(0, 300)}` };
+			}
+		} catch (err) {
+			if (retry === 2) {
+				return { ok: false, reason: 'exception', detail: (err as Error).message };
+			}
+		}
 	}
-	return false;
+	return { ok: false, reason: 'exhausted retries' };
 }
