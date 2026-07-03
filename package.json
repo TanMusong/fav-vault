@@ -4,7 +4,7 @@
 	"description": "Automated social media favorite downloader with WebUI",
 	"main": "dst/index.js",
 	"scripts": {
-		"build": "tsc && cp -r src/web/templates dst/web/ && cp -r src/web/public dst/web/ && cp -r src/web/locales dst/web/",
+		"build": "tsc && node scripts/copy-assets.mjs",
 		"start": "npm run build && node dst/index.js",
 		"docker:build": "docker compose build",
 		"docker:up": "docker compose up -d",
