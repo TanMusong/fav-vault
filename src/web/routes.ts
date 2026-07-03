@@ -6,7 +6,7 @@ import { getAllSites } from '../core/browser/registry';
 import { scheduleTask, clearTask, rescheduleTask } from '../core/scheduler/scheduler';
 import { verifyTask, isRunning } from '../core/browser/runner';
 import { events } from '../core/events';
-import { config } from '../core/config/manager';
+import { config, getGlobal } from '../core/config/manager';
 
 const TAG_URLS = [
 	'https://gh-proxy.org/https://api.github.com/repos/TanMusong/fav-vault/tags?per_page=1',
@@ -227,7 +227,6 @@ export function setupRoutes(app: express.Application): void {
   });
 
   app.get('/api/global', (_req: Request, res: Response) => {
-    const { getGlobal } = require('../config/manager');
     res.json(getGlobal());
   });
 
