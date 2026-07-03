@@ -60,41 +60,43 @@ export async function downloadFile(url: string, destPath: string, options: Downl
 			const controller = new AbortController();
 			const timer = setTimeout(() => controller.abort(), timeout);
 
-			const resp = await fetch(url, {
-				headers: {
-					'Cookie': cookies,
-					'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36',
-					'Referer': 'https://www.douyin.com/',
-					'Origin': 'https://www.douyin.com',
-					...extraHeaders
-				},
-				signal: controller.signal,
-				redirect: 'follow'
-			});
+			try {
+				const resp = await fetch(url, {
+					headers: {
+						'Cookie': cookies,
+						'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36',
+						'Referer': 'https://www.douyin.com/',
+						'Origin': 'https://www.douyin.com',
+						...extraHeaders
+					},
+					signal: controller.signal,
+					redirect: 'follow'
+				});
 
-			clearTimeout(timer);
+				if (!resp.ok) continue;
 
-			if (!resp.ok) continue;
+				const expectedSize = parseInt(resp.headers.get('content-length') || '0', 10) || 0;
+				const body = resp.body;
+				if (!body) continue;
 
-			const expectedSize = parseInt(resp.headers.get('content-length') || '0', 10) || 0;
-			const body = resp.body;
-			if (!body) continue;
+				const nodeStream = Readable.fromWeb(body as any);
+				const ws = fs.createWriteStream(destPath);
+				let downloaded = 0;
 
-			const nodeStream = Readable.fromWeb(body as any);
-			const ws = fs.createWriteStream(destPath);
-			let downloaded = 0;
+				nodeStream.on('data', (chunk: Buffer) => {
+					downloaded += chunk.length;
+					if (onProgress) onProgress(downloaded, expectedSize);
+				});
 
-			nodeStream.on('data', (chunk: Buffer) => {
-				downloaded += chunk.length;
-				if (onProgress) onProgress(downloaded, expectedSize);
-			});
+				await pipeline(nodeStream, ws);
 
-			await pipeline(nodeStream, ws);
-
-			if (downloaded > 1000) {
-				return { fileSize: downloaded, expectedSize };
+				if (downloaded > 1000) {
+					return { fileSize: downloaded, expectedSize };
+				}
+				try { fs.unlinkSync(destPath); } catch (_e) { /* */ }
+			} finally {
+				clearTimeout(timer);
 			}
-			try { fs.unlinkSync(destPath); } catch (_e) { /* */ }
 		} catch (err: any) {
 			if (err.name === 'AbortError') continue;
 			try { fs.unlinkSync(destPath); } catch (_e) { /* */ }
