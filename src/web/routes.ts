@@ -234,6 +234,8 @@ export function setupRoutes(app: express.Application): void {
     const downloads = store.getDownloads(taskId);
     const dl = downloads.find(d => d.post_id === postId);
     if (!dl) { res.status(404).json({ error: 'download not found' }); return; }
+    const file = dl.files.find(f => f.filename === filename && f.fileStatus === 'success');
+    if (!file) { res.status(404).json({ error: 'file not found' }); return; }
     const site = getAllSites().find(s => s.name === task.site);
     const pathTemplate = (task.customConfigJson as Record<string, unknown>)?.downloadPath as string || DEFAULT_PATH_TEMPLATE;
     const userDir = resolveDownloadDir(config.downloadDir, pathTemplate, {
@@ -243,9 +245,11 @@ export function setupRoutes(app: express.Application): void {
       author: dl.author || 'unknown',
       author_id: dl.author_id || 'unknown'
     });
-    const filePath = path.join(userDir, filename);
+    const filePath = path.resolve(userDir, file.filename);
+    const relative = path.relative(path.resolve(userDir), filePath);
+    if (relative.startsWith('..') || path.isAbsolute(relative)) { res.status(400).json({ error: 'invalid filename' }); return; }
     if (!fs.existsSync(filePath)) { res.status(404).json({ error: 'file not found' }); return; }
-    const ext = path.extname(filename).toLowerCase();
+    const ext = path.extname(file.filename).toLowerCase();
     const mimeMap: Record<string, string> = { '.mp4': 'video/mp4', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif' };
     res.setHeader('Content-Type', mimeMap[ext] || 'application/octet-stream');
     res.setHeader('Cache-Control', 'public, max-age=86400');
