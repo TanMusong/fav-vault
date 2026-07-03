@@ -15,7 +15,7 @@ Your bookmarks are no longer just a static list — they become a continuously r
 
 ## ⚠️ Warning
 
-This project is still in **beta testing** and may exhibit unexpected behavior or data risks. Use with caution.  
+This project may trigger social media risk-control rules and carries unpredictable risks. Use with caution.  
 The program will **remove corresponding records** after successful downloads.  
 This tool is for learning and technical exchange only. Please comply with platform rules and applicable laws.
 
