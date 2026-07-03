@@ -24,6 +24,15 @@ interface DbRow {
 	last_state: number;
 }
 
+function safeJsonParse<T>(raw: string | null | undefined, fallback: T): T {
+	if (!raw) return fallback;
+	try {
+		return JSON.parse(raw) as T;
+	} catch {
+		return fallback;
+	}
+}
+
 function init(): void {
 	ensureDir(config.dbPath);
 	const rootDbPath = path.join(config.dbPath, 'tasks.db');
@@ -127,7 +136,7 @@ function mapRowToTask(row: DbRow, downloadCount?: number): Task {
 		paused: !!row.paused,
 		interval: row.interval,
 		cookies: row.cookies,
-		customConfigJson: row.custom_config_json ? JSON.parse(row.custom_config_json) as Record<string, unknown> : {},
+		customConfigJson: safeJsonParse<Record<string, unknown>>(row.custom_config_json, {}),
 		next_run: row.next_run,
 		last_state: row.last_state,
 		nextRun: row.next_run,
@@ -237,8 +246,8 @@ function getDownloads(taskId: string): DownloadRecord[] {
 			desc: r.desc,
 			state: r.state,
 			state_message: r.state_message,
-			files: JSON.parse(r.files_json || '[]') as DownloadFile[],
-			data_json: JSON.parse(r.data_json || '{}') as Record<string, unknown>,
+			files: safeJsonParse<DownloadFile[]>(r.files_json, []),
+			data_json: safeJsonParse<Record<string, unknown>>(r.data_json, {}),
 			created_at: r.created_at
 		};
 	});
