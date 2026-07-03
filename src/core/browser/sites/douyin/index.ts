@@ -84,11 +84,20 @@ class DouyinSite extends BaseSite {
 		}
 		let downloaded = 0, failed = 0;
 		const skipIds: string[] = [];
+		const unfavoriteWithNewPage = async (detailUrl: string): Promise<void> => {
+			const actionPage = await browser.newPage();
+			await actionPage.setViewport({ width: 1280, height: 800 });
+			try {
+				await unfavoritePage(actionPage, detailUrl);
+			} finally {
+				await actionPage.close().catch(() => { });
+			}
+		};
 
 		const processItem = async (item: FetchItem): Promise<void> => {
 			const detailUrl = getDetailUrl(item);
 			if (ctx.hasSuccessfulDownload(item.id)) {
-				await unfavoritePage(page, detailUrl);
+				await unfavoriteWithNewPage(detailUrl);
 				return;
 			}
 			const downloadUrls = getDownloadUrls(item);
@@ -157,7 +166,7 @@ class DouyinSite extends BaseSite {
 				failed++;
 				skipIds.push(item.id);
 			}
-			await unfavoritePage(page, detailUrl);
+			await unfavoriteWithNewPage(detailUrl);
 		};
 
 		try {

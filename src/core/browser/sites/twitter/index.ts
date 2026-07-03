@@ -139,7 +139,14 @@ class TwitterSite extends BaseSite {
 		const skipIds: string[] = [];
 
 		const handleUnbookmark = async (item: TwitterItem) => {
-			const ok = await unbookmarkPage(page, item.detailUrl);
+			const actionPage = await browser.newPage();
+			await actionPage.setViewport({ width: 1280, height: 800 });
+			let ok = false;
+			try {
+				ok = await unbookmarkPage(actionPage, item.detailUrl);
+			} finally {
+				await actionPage.close().catch(() => {});
+			}
 			if (!ok) {
 				ctx.addLog('error', `Unbookmark failed: ${item.id}`);
 				ctx.updateDownload(item.id, { state: DownloadStatus.Failed, stateMessage: 'unbookmark failed' });
