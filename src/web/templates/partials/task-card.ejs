@@ -1,8 +1,7 @@
 <%
   var site = sites.find(function(s) { return s.name === t.site; });
   var color = site ? site.color : '#888';
-  var siteLabel = site ? site.label : '';
-  var siteBadge = siteLabel ? '<span style="background:' + color + '22;color:' + color + ';font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500;">' + siteLabel + '</span>' : '';
+  var siteBadge = site ? '<span style="background:' + color + '22;color:' + color + ';font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500;" data-i18n="site.' + site.name + '"></span>' : '';
 %>
 <a class="task-card" href="#" onclick="event.preventDefault();openDetail('<%= t.id %>')">
   <i class="<%= site ? site.icon : '' %> task-card-icon"></i>
@@ -17,7 +16,7 @@
   </div>
   <div class="task-card-actions">
     <% if (t.downloadCount) { %>
-      <span class="download-count" data-count="<%= t.downloadCount %>"><%= t.downloadCount %> works</span>
+      <span class="download-count" data-count="<%= t.downloadCount %>"><%= t.downloadCount %> <span data-i18n="countdown.works_unit"></span></span>
     <% } %>
   </div>
 </a>
