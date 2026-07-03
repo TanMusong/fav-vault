@@ -152,13 +152,12 @@ class TwitterSite extends BaseSite {
 			}
 			if (!result.ok) {
 				const detailInfo = result.detail ? ` | detail: ${result.detail}` : '';
-				ctx.addLog('error', `Unbookmark failed: ${item.id} (${item.authorId}) | reason: ${result.reason}${detailInfo}`);
-				ctx.updateDownload(item.id, { state: DownloadStatus.Failed, stateMessage: `unbookmark: ${result.reason}` });
-				failed++;
+				ctx.addLog('warn', `Unbookmark failed: ${item.id} (${item.authorId}) | reason: ${result.reason}${detailInfo}`);
 			}
 		};
 
 		const processItem = async (item: TwitterItem): Promise<void> => {
+			skipIds.push(item.id);
 			if (ctx.hasSuccessfulDownload(item.id)) {
 				if (item.bookmarked) await handleUnbookmark(item);
 				return;
@@ -172,7 +171,6 @@ class TwitterSite extends BaseSite {
 					files: [{ type: 'text', filename: '无媒体', url: '', fileSize: 0, fileExpectedSize: 0, fileStatus: 'success' }],
 					dataJson: { detailUrl: item.detailUrl, raw: item.raw }
 				});
-				skipIds.push(item.id);
 				if (item.bookmarked) await handleUnbookmark(item);
 				return;
 			}
@@ -230,7 +228,6 @@ class TwitterSite extends BaseSite {
 					ctx.updateDownload(item.id, { state: DownloadStatus.Failed, stateMessage: `partial: ${failedFiles}`, files });
 					ctx.addLog('warn', `Partial download failed: ${item.id} (${item.authorId}) | failed files: ${failedFiles}`);
 					failed++;
-					skipIds.push(item.id);
 				}
 			} catch (err) {
 				console.error('[twitter] download error:', (err as Error).message);
@@ -241,7 +238,6 @@ class TwitterSite extends BaseSite {
 					files: [], dataJson: { detailUrl: item.detailUrl, raw: item.raw }
 				});
 				failed++;
-				skipIds.push(item.id);
 			}
 		};
 

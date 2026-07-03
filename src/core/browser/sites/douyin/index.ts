@@ -95,6 +95,7 @@ class DouyinSite extends BaseSite {
 		};
 
 		const processItem = async (item: FetchItem): Promise<void> => {
+			skipIds.push(item.id);
 			const detailUrl = getDetailUrl(item);
 			if (ctx.hasSuccessfulDownload(item.id)) {
 				await unfavoriteWithNewPage(detailUrl);
@@ -104,7 +105,6 @@ class DouyinSite extends BaseSite {
 			if (downloadUrls.length === 0) {
 				ctx.addLog('warn', `No download URLs: ${item.id} (${item.author})`);
 				ctx.addDownload({ id: item.id, author: item.author, authorId: String(item.author_id), desc: item.desc, state: DownloadStatus.Failed, stateMessage: 'no download urls', files: [], dataJson: { detailUrl, raw: item.raw } });
-				skipIds.push(item.id);
 				failed++;
 				return;
 			}
@@ -159,14 +159,12 @@ class DouyinSite extends BaseSite {
 					ctx.updateDownload(item.id, { state: DownloadStatus.Failed, stateMessage: `partial: ${failedFiles}`, files });
 					ctx.addLog('warn', `Partial download failed: ${item.id} (${item.author}) | failed files: ${failedFiles}`);
 					failed++;
-					skipIds.push(item.id);
 				}
 			} catch (err) {
 				console.error('[douyin] download error:', (err as Error).message);
 				ctx.addLog('error', `Download error: ${item.id} - ${(err as Error).message}`);
 				ctx.addDownload({ id: item.id, author: item.author, authorId: String(item.author_id), desc: item.desc, state: DownloadStatus.Failed, stateMessage: (err as Error).message.slice(0, 50), files: [], dataJson: { detailUrl, raw: item.raw } });
 				failed++;
-				skipIds.push(item.id);
 			}
 			await unfavoriteWithNewPage(detailUrl);
 		};
