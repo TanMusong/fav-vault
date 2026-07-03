@@ -245,7 +245,7 @@
     }
 
     function jsString(value) {
-      return JSON.stringify(String(value == null ? '' : value)).replace(/</g, '\\u003c');
+      return String(value == null ? '' : value).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/</g, '\\u003c');
     }
 
     function safeClass(value) {
@@ -264,7 +264,7 @@
       }
       var siteBadge = siteLabel ? '<span class="task-site" style="background:' + color + '22;color:' + color + ';font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500;">' + siteLabel + '</span>' : '';
       var downloadCount = t.downloadCount ? '<span class="download-count">' + escapeHtml(t.downloadCount) + ' ' + escapeHtml(_t('countdown.works_unit')) + '</span>' : '';
-      return '<a class="task-card" href="#" onclick="event.preventDefault();openDetail(' + jsString(t.id) + ')">' +
+      return '<a class="task-card" href="#" onclick="event.preventDefault();openDetail(\'' + jsString(t.id) + '\')">' +
         '<i class="' + icon + ' task-card-icon"></i>' +
         '<div class="task-header"><div class="task-name">' +
         '<span class="status-dot ' + dotClass + '"></span>' +
@@ -647,7 +647,7 @@
     function renderFileItem(f, postIdx, fileIdx) {
       var fcls = safeClass(f.fileStatus === 'failed' ? 'failed' : f.fileStatus === 'downloading' ? 'downloading' : f.type);
       var postId = detailDownloads[postIdx] ? detailDownloads[postIdx].post_id : '';
-      var clickable = f.fileStatus === 'success' ? ' onclick="event.stopPropagation();openPreview(' + jsString(postId) + ',' + jsString(f.filename) + ')" style="cursor:pointer;color:#999;text-decoration:underline;"' : '';
+      var clickable = f.fileStatus === 'success' ? ' onclick="event.stopPropagation();openPreview(\'' + jsString(postId) + '\',\'' + jsString(f.filename) + '\')\" style="cursor:pointer;color:#999;text-decoration:underline;"' : '';
       var html = '<div class="file-item" id="file-' + postIdx + '-' + fileIdx + '">';
       html += '<span class="file-name"' + clickable + '>' + escapeHtml(f.filename) + '</span>';
       html += '<div class="file-meta">';
@@ -749,7 +749,7 @@
           }
           if (nameSpan && !nameSpan.getAttribute('onclick')) {
             var postId = detailDownloads[postIdx] ? detailDownloads[postIdx].post_id : '';
-            nameSpan.setAttribute('onclick', 'event.stopPropagation();openPreview(' + jsString(postId) + ',' + jsString(f.filename) + ')');
+            nameSpan.setAttribute('onclick', 'event.stopPropagation();openPreview(\'' + jsString(postId) + '\',\'' + jsString(f.filename) + '\')');
             nameSpan.style.cursor = 'pointer';
             nameSpan.style.color = '#999';
             nameSpan.style.textDecoration = 'underline';
