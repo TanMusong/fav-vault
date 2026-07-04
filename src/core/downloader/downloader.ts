@@ -65,8 +65,6 @@ export async function downloadFile(url: string, destPath: string, options: Downl
 					headers: {
 						'Cookie': cookies,
 						'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36',
-						'Referer': 'https://www.douyin.com/',
-						'Origin': 'https://www.douyin.com',
 						...extraHeaders
 					},
 					signal: controller.signal,

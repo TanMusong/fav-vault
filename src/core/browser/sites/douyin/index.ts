@@ -129,7 +129,7 @@ class DouyinSite extends BaseSite {
 					for (const url of dl.urls) {
 						const result = await downloadFile(url, dest, {
 							cookies: task.cookies,
-							headers: { 'Referer': 'https://www.douyin.com/' },
+							headers: { 'Referer': 'https://www.douyin.com/', 'Origin': 'https://www.douyin.com' },
 							onProgress: (downloaded, expected) => {
 								files[fi].fileSize = downloaded;
 								files[fi].fileExpectedSize = expected;
