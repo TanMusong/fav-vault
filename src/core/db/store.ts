@@ -280,9 +280,16 @@ function toggleTaskPause(taskId: string): boolean {
 	return !!newPaused;
 }
 
-function getAllLogs(limit = 50, offset = 0): { total: number; items: Array<{ id: number; level: string; time: string; message: string; taskName: string }> } {
-	const total = (rootDb.prepare('SELECT COUNT(*) as c FROM logs').get() as Record<string, number>).c;
-	const rows = rootDb.prepare('SELECT l.id, l.level, l.time, l.message, t.name as taskName FROM logs l LEFT JOIN tasks t ON l.task_id = t.id ORDER BY l.id DESC LIMIT ? OFFSET ?').all(limit, offset) as Array<{ id: number; level: string; time: string; message: string; taskName: string | null }>;
+function getAllLogs(limit = 50, offset = 0, level?: string): { total: number; items: Array<{ id: number; level: string; time: string; message: string; taskName: string }> } {
+	const whereClause = level ? ' WHERE l.level = ?' : '';
+	const countSql = 'SELECT COUNT(*) as c FROM logs l' + whereClause;
+	const querySql = 'SELECT l.id, l.level, l.time, l.message, t.name as taskName FROM logs l LEFT JOIN tasks t ON l.task_id = t.id' + whereClause + ' ORDER BY l.id DESC LIMIT ? OFFSET ?';
+	const total = level
+		? (rootDb.prepare(countSql).get(level) as Record<string, number>).c
+		: (rootDb.prepare(countSql).get() as Record<string, number>).c;
+	const rows = level
+		? rootDb.prepare(querySql).all(level, limit, offset) as Array<{ id: number; level: string; time: string; message: string; taskName: string | null }>
+		: rootDb.prepare(querySql).all(limit, offset) as Array<{ id: number; level: string; time: string; message: string; taskName: string | null }>;
 	return { total, items: rows.map(r => ({ ...r, taskName: r.taskName || '' })) };
 }
 
@@ -296,5 +303,9 @@ function getLogs(taskId: string, limit = 100, offset = 0): { total: number; item
 	return { total, items };
 }
 
+function clearLogs(): void {
+	rootDb.prepare('DELETE FROM logs').run();
+}
+
 export type { Task, DownloadData, DownloadRecord, DownloadFile };
-export { init, getTasks, getTask, addTask, updateTask, setTaskRunState, deleteTask, addDownload, updateDownload, fixStaleDownloading, getDownloads, clearDownloads, hasPostDownload, hasSuccessfulDownload, toggleTaskPause, addLog, getLogs, getAllLogs };
+export { init, getTasks, getTask, addTask, updateTask, setTaskRunState, deleteTask, addDownload, updateDownload, fixStaleDownloading, getDownloads, clearDownloads, hasPostDownload, hasSuccessfulDownload, toggleTaskPause, addLog, getLogs, getAllLogs, clearLogs };

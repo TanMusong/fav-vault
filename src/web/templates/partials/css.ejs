@@ -152,6 +152,12 @@
   .detail-meta-label { color: #555; font-size: 11px; }
   .detail-meta-value { color: #ccc; }
   .detail-actions { display: flex; flex-direction: row; gap: 8px; margin-top: 8px; justify-content: flex-end; }
+  .logs-toolbar { display: flex; gap: 8px; padding: 8px 16px; border-bottom: 1px solid #222; flex-shrink: 0; align-items: center; }
+  .logs-filter { font-size: 12px; padding: 4px 12px; border-radius: 6px; line-height: 1.4; }
+  .logs-filter.active[data-level="all"] { background: #ffffff15; color: #fff !important; border-color: #ffffff33; }
+  .logs-filter.active[data-level="error"] { background: #f4433622; color: #f44336 !important; border-color: #f4433644; }
+  .logs-filter.active[data-level="warn"] { background: #ff980022; color: #ff9800 !important; border-color: #ff980044; }
+  .logs-filter.active[data-level="info"] { background: #1d9bf022; color: #1d9bf0 !important; border-color: #1d9bf044; }
 </style>
 
 <style>

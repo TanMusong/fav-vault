@@ -236,7 +236,13 @@ export function setupRoutes(app: express.Application): void {
   app.get('/api/logs', (req: Request, res: Response) => {
     const limit = parseInt(typeof req.query.limit === 'string' ? req.query.limit : '50', 10) || 50;
     const offset = parseInt(typeof req.query.offset === 'string' ? req.query.offset : '0', 10) || 0;
-    res.json(store.getAllLogs(limit, offset));
+    const level = typeof req.query.level === 'string' && ['error', 'warn', 'info'].includes(req.query.level) ? req.query.level : undefined;
+    res.json(store.getAllLogs(limit, offset, level));
+  });
+
+  app.delete('/api/logs', (_req: Request, res: Response) => {
+    store.clearLogs();
+    res.json({ ok: true });
   });
 
   app.get('/api/tasks/:id/preview/:postId/:filename', (req: Request, res: Response) => {
