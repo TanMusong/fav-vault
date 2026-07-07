@@ -132,10 +132,13 @@ export function getMediaUrls(item: TwitterItem): Array<{ filename: string; type:
 			}
 		} else if (m.type === 'photo') {
 			photoIdx++;
-			const url = m.media_url_https || '';
-			if (url) {
+			const baseUrl = m.media_url_https || '';
+			if (baseUrl) {
+				const ext = baseUrl.split('.').pop()?.toLowerCase() || 'jpg';
+				const format = ext === 'png' ? 'png' : 'jpg';
+				const url = baseUrl + '?format=' + format + '&name=orig';
 				tasks.push({
-					filename: `${postId}_${photoIdx}.jpg`,
+					filename: `${postId}_${photoIdx}.${format}`,
 					type: 'image',
 					urls: [url]
 				});
