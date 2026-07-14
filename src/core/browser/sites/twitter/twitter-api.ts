@@ -136,7 +136,8 @@ export function getMediaUrls(item: TwitterItem): Array<{ filename: string; type:
 			if (baseUrl) {
 				const ext = baseUrl.split('.').pop()?.toLowerCase() || 'jpg';
 				const format = ext === 'png' ? 'png' : 'jpg';
-				const url = baseUrl + '?format=' + format + '&name=orig';
+				const baseWithoutExt = baseUrl.replace(new RegExp('\\.' + ext + '$'), '');
+				const url = baseWithoutExt + '?format=' + format + '&name=large';
 				tasks.push({
 					filename: `${postId}_${photoIdx}.${format}`,
 					type: 'image',
