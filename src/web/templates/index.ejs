@@ -278,8 +278,9 @@
       var siteLabel = site ? escapeHtml(_t('site.' + site.name)) : '';
       var dotClass = t.paused ? 'status-dot-red' : 'status-dot-green';
       var countdown = '';
+      var countdownColor = t.last_state === 0 ? '#f44336' : '#1d9bf0';
       if (!t.paused && t.nextRun) {
-        countdown = '<div class="countdown" data-next="' + escapeHtml(t.nextRun) + '" data-task-id="' + escapeHtml(t.id) + '" style="font-size:13px;">-</div>';
+        countdown = '<div class="countdown" data-next="' + escapeHtml(t.nextRun) + '" data-task-id="' + escapeHtml(t.id) + '" style="font-size:13px;color:' + countdownColor + ';">-</div>';
       }
       var siteBadge = siteLabel ? '<span class="task-site" style="background:' + color + '22;color:' + color + ';font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500;">' + siteLabel + '</span>' : '';
       var downloadCount = t.downloadCount ? '<span class="download-count">' + escapeHtml(t.downloadCount) + ' ' + escapeHtml(_t('countdown.works_unit')) + '</span>' : '';
@@ -595,6 +596,7 @@
         '<div class="detail-meta-item"><span class="detail-meta-label">' + escapeHtml(_t('detail.user_id')) + '</span><span class="detail-meta-value">' + escapeHtml(task.userId || '-') + '</span></div>' +
         '<div class="detail-meta-item"><span class="detail-meta-label">' + escapeHtml(_t('detail.interval')) + '</span><span class="detail-meta-value">' + escapeHtml(intervalText) + '</span></div>' +
         '<div class="detail-meta-item"><span class="detail-meta-label">' + escapeHtml(_t('detail.works')) + '</span><span class="detail-meta-value">' + escapeHtml(downloadsText) + '</span></div>' +
+        '<div class="detail-meta-item"><span class="detail-meta-label">' + escapeHtml(_t('detail.last_result')) + '</span><span class="detail-meta-value" style="color:' + (task.last_state === 1 ? '#4caf50' : task.last_state === 0 ? '#f44336' : '#888') + '">' + (task.last_state === 1 ? _t('status.completed') : task.last_state === 0 ? _t('status.failed') : '--') + '</span></div>' +
         '<div class="detail-meta-item"><span class="detail-meta-label">' + escapeHtml(_t('detail.run')) + '</span><span class="detail-meta-value" id="detail-run-status" style="' + runStyle + '">' + escapeHtml(runText) + '</span></div>';
       var actionsHtml = '';
       if (!paused) actionsHtml += '<button class="btn btn-primary btn-sm" onclick="runDetailTask()" title="' + _t('detail.run_now') + '"><i class="fa-solid fa-play"></i></button>';

@@ -70,6 +70,7 @@ window.I18N={
 "detail.works":"作品",
 "detail.run":"運行",
 "detail.run_now":"立即執行",
+"detail.last_result":"上次結果",
 "detail.enable":"啟用",
 "detail.disable":"暫停",
 "detail.edit":"編輯",

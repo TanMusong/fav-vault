@@ -70,6 +70,7 @@ window.I18N={
 "detail.works":"Works",
 "detail.run":"Run",
 "detail.run_now":"Run Now",
+"detail.last_result":"Last result",
 "detail.enable":"Enable",
 "detail.disable":"Pause",
 "detail.edit":"Edit",

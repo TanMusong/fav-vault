@@ -72,6 +72,7 @@ window.I18N={
 "detail.works":"作品",
 "detail.run":"运行",
 "detail.run_now":"立即执行",
+"detail.last_result":"上次结果",
 "detail.enable":"启用",
 "detail.disable":"暂停",
 "detail.edit":"编辑",
