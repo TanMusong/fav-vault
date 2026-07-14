@@ -41,19 +41,23 @@ function getLocalVersion(): string {
 }
 
 async function fetchLatestTag(): Promise<string | null> {
-	for (const url of TAG_URLS) {
-		try {
-			const controller = new AbortController();
-			const timeout = setTimeout(() => controller.abort(), 5000);
-			const resp = await fetch(url, { signal: controller.signal });
-			clearTimeout(timeout);
-			if (!resp.ok) continue;
-			const data = await resp.json() as Array<{ name?: string }>;
-			if (!Array.isArray(data) || data.length === 0) continue;
-			const latest = data[0]?.name?.replace(/^v/, '');
-			if (latest) return latest;
-		} catch { continue; }
-	}
+	const controller = new AbortController();
+	const timer = setTimeout(() => controller.abort(), 8000);
+	try {
+		const results = await Promise.allSettled(TAG_URLS.map(url =>
+			fetch(url, { signal: controller.signal }).then(r => {
+				if (!r.ok) throw new Error('not ok');
+				return r.json();
+			})
+		));
+		clearTimeout(timer);
+		for (const r of results) {
+			if (r.status === 'fulfilled' && Array.isArray(r.value) && r.value.length > 0) {
+				const latest = r.value[0]?.name?.replace(/^v/, '');
+				if (latest) return latest;
+			}
+		}
+	} catch { clearTimeout(timer); }
 	return null;
 }
 
