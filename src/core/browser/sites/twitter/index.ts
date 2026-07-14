@@ -26,7 +26,7 @@ class TwitterSite extends BaseSite {
 	}
 
 	public getCookieField() {
-		return { label: 'Cookie', placeholder: '从 x.com 复制 Cookie 字符串（需要 auth_token 和 ct0）', required: true };
+		return { label: 'Cookie', placeholder: 'msg.cookie_placeholder_twitter', required: true };
 	}
 
 	public async checkLogin(page: Page): Promise<{ username: string; userId: string }> {
@@ -132,7 +132,7 @@ class TwitterSite extends BaseSite {
 		const { username } = await this.checkLogin(page);
 		if (!username) {
 			ctx.addLog('warn', 'X login expired - checkLogin returned empty username');
-			return { state: 0, message: '登录失效', downloaded: 0, failed: 0, total: 0, duration: Date.now() - startTime };
+			return { state: 0, message: 'status.login_expired', downloaded: 0, failed: 0, total: 0, duration: Date.now() - startTime };
 		}
 		ctx.addLog('info', `X login OK: ${username}`);
 
@@ -167,8 +167,8 @@ class TwitterSite extends BaseSite {
 				ctx.addLog('info', `No media: ${item.id} (${item.authorId})`);
 				ctx.addDownload({
 					id: item.id, author: item.author, authorId: item.authorId, desc: item.desc,
-					state: DownloadStatus.Success, stateMessage: '无媒体',
-					files: [{ type: 'text', filename: '无媒体', url: '', fileSize: 0, fileExpectedSize: 0, fileStatus: 'success' }],
+					state: DownloadStatus.Success, stateMessage: 'status.no_media',
+					files: [{ type: 'text', filename: 'status.no_media', url: '', fileSize: 0, fileExpectedSize: 0, fileStatus: 'success' }],
 					dataJson: { detailUrl: item.detailUrl, raw: item.raw }
 				});
 				if (item.bookmarked) await handleUnbookmark(item);

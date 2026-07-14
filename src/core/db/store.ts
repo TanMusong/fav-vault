@@ -217,7 +217,7 @@ function updateDownload(taskId: string, postId: string, data: { state?: number; 
 
 function fixStaleDownloading(taskId: string): number {
 	const db = getTaskDb(taskId);
-	const result = db.prepare('UPDATE downloads SET state = 2, state_message = ? WHERE state = 3').run('下载中断');
+	const result = db.prepare('UPDATE downloads SET state = 2, state_message = ? WHERE state = 3').run('status.interrupted');
 	return result.changes;
 }
 

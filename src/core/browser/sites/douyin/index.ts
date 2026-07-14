@@ -80,7 +80,7 @@ class DouyinSite extends BaseSite {
 		const { username } = await this.checkLogin(page);
 		if (!username) {
 			ctx.addLog('warn', 'Douyin login expired');
-			return { state: 0, message: '登录失效', downloaded: 0, failed: 0, total: 0, duration: Date.now() - startTime };
+			return { state: 0, message: 'status.login_expired', downloaded: 0, failed: 0, total: 0, duration: Date.now() - startTime };
 		}
 		let downloaded = 0, failed = 0;
 		const skipIds: string[] = [];

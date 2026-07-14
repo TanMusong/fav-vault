@@ -358,6 +358,9 @@
       document.getElementById('f-cookie').closest('.field').style.display = enabled ? '' : 'none';
       document.getElementById('site-disabled-hint').style.display = enabled ? 'none' : '';
       document.querySelector('.modal-footer .btn-primary').disabled = !enabled;
+      if (site && site.cookieField) {
+        document.getElementById('f-cookie').placeholder = _t(site.cookieField.placeholder);
+      }
     }
 
     function openCreateModal() {

@@ -31,7 +31,7 @@ export default abstract class BaseSite {
   public abstract executeTask(ctx: TaskContext): Promise<TaskResult>;
 
   public getCookieField(): CookieField {
-    return { label: 'Cookie', placeholder: '从浏览器复制完整 Cookie 字符串', required: true };
+    return { label: 'Cookie', placeholder: 'msg.cookie_placeholder_douyin', required: true };
   }
 
   public getCookieDomain(): string {
