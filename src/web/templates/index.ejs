@@ -658,7 +658,7 @@
       }
       if (hasFiles) {
         html += '<span class="post-count">' + g.files.length + ' ' + _t('detail.files') + '</span>';
-        html += '<span class="post-arrow" id="arrow-' + i + '">▶</span>';
+        html += '<span class="post-arrow' + (g.state === 3 ? ' open' : '') + '" id="arrow-' + i + '">▶</span>';
       }
       html += '</div></div>';
       if (g.state === 3 && hasFiles) {
