@@ -198,7 +198,7 @@ class TwitterSite extends BaseSite {
 					for (const url of dl.urls) {
 						const result = await downloadFile(url, dest, {
 							cookies: task.cookies,
-							headers: { 'Referer': 'https://x.com/', 'Origin': 'https://x.com' },
+							headers: { 'Referer': 'https://x.com/' },
 							onProgress: (downloaded, expected) => {
 								files[fi].fileSize = downloaded;
 								files[fi].fileExpectedSize = expected;
