@@ -1,6 +1,6 @@
 {
 	"name": "fav-vault",
-	"version": "2.0.5",
+	"version": "2.0.6",
 	"description": "Automated social media favorite downloader with WebUI",
 	"main": "dst/index.js",
 	"scripts": {
