@@ -37,7 +37,7 @@ async function verifyTask(taskId: string): Promise<{ username: string; userId: s
 	await page.setViewport({ width: 1280, height: 800 });
 	try {
 		const { username, userId } = await site.checkLogin(page);
-		if (!username) throw new Error('无法获取用户名，请检查 Cookie 是否正确');
+		if (!username) throw new Error('error.invalid_cookies');
 		return { username, userId };
 	} finally {
 		await page.close();
@@ -45,7 +45,7 @@ async function verifyTask(taskId: string): Promise<{ username: string; userId: s
 }
 
 async function runTask(taskId: string): Promise<TaskResult> {
-	if (runningTasks.has(taskId)) throw new Error('任务正在执行中');
+	if (runningTasks.has(taskId)) throw new Error('error.task_running');
 	const task = store.getTask(taskId);
 	if (!task) throw new Error(`Task ${taskId} not found`);
 	if (task.paused) throw new Error(`Task ${taskId} is paused`);
@@ -107,4 +107,28 @@ async function runTask(taskId: string): Promise<TaskResult> {
 	}
 }
 
-export { verifyTask, runTask, isRunning };
+async function verifyCredentials(siteName: string, cookies: string): Promise<{ username: string; userId: string }> {
+	const site = getSite(siteName);
+	if (!site) throw new Error('error.site_not_found');
+	const browser = await getBrowser('verify-' + siteName);
+	const context = await browser.createBrowserContext();
+	try {
+		const domain = site.getCookieDomain();
+		const parsedCookies = parseCookies(cookies);
+		if (parsedCookies.length === 0) throw new Error('No cookies provided');
+		await context.setCookie(...parsedCookies.map(c => ({ name: c.name, value: c.value, domain })));
+		const page = await context.newPage();
+		await page.setViewport({ width: 1280, height: 800 });
+		try {
+			const { username, userId } = await site.checkLogin(page);
+			if (!username) throw new Error('error.invalid_cookies');
+			return { username, userId };
+		} finally {
+			await page.close().catch(() => {});
+		}
+	} finally {
+		await context.close().catch(() => {});
+	}
+}
+
+export { verifyTask, verifyCredentials, runTask, isRunning };

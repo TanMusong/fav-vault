@@ -161,9 +161,9 @@ function getTask(id: string): Task | null {
 	return mapRowToTask(row, countRow.c as number);
 }
 
-function addTask(data: { name: string; site: string; interval?: number; cookies: string; customConfigJson?: Record<string, unknown> }): Task {
+function addTask(data: { name: string; site: string; interval?: number; cookies: string; customConfigJson?: Record<string, unknown>; userId?: string }): Task {
 	const id = crypto.randomUUID();
-	rootDb.prepare('INSERT INTO tasks (id, name, site, interval, cookies, custom_config_json) VALUES (?, ?, ?, ?, ?, ?)').run(id, data.name || 'Unnamed', data.site, data.interval || 1800, data.cookies || '', JSON.stringify(data.customConfigJson || {}));
+	rootDb.prepare('INSERT INTO tasks (id, name, user_id, site, interval, cookies, custom_config_json) VALUES (?, ?, ?, ?, ?, ?, ?)').run(id, data.name || 'Unnamed', data.userId || '', data.site, data.interval || 1800, data.cookies || '', JSON.stringify(data.customConfigJson || {}));
 	return getTask(id)!;
 }
 

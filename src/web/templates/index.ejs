@@ -369,7 +369,10 @@
       document.getElementById('f-cookie').closest('.field').style.display = '';
       document.getElementById('f-download-path').closest('.field').style.display = '';
       document.getElementById('site-disabled-hint').style.display = 'none';
-      document.querySelector('.modal-footer .btn-primary').disabled = false;
+      var btn = document.querySelector('.modal-footer .btn-primary');
+      btn.disabled = false;
+      btn.textContent = _t('modal.create');
+      btn.onclick = submitTask;
       document.getElementById('modal-overlay').classList.add('active');
       if (SITES.length > 0) selectSite(SITES[0].name);
     }
@@ -407,7 +410,7 @@
       document.querySelector('.modal-body').style.pointerEvents = '';
       document.querySelector('.modal-body').style.opacity = '';
 
-      if (!res.ok) { showMsg(_t('msg.create_failed') + (data.error || _t('msg.unknown_error'))); return; }
+      if (!res.ok) { showMsg(_t('msg.create_failed') + _t(data.error || 'msg.unknown_error')); return; }
       closeModal();
       TASKS.unshift(data);
       var list = document.getElementById('task-list');
@@ -1001,7 +1004,7 @@
       btn.textContent = _t('modal.save');
       btn.disabled = false;
 
-      if (!res.ok) { showMsg(_t('msg.save_failed') + (data.error || _t('msg.unknown_error'))); return; }
+      if (!res.ok) { showMsg(_t('msg.save_failed') + _t(data.error || 'msg.unknown_error')); return; }
       closeModal();
       currentTaskData = data;
       renderDetailMeta();

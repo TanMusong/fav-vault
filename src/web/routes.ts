@@ -4,7 +4,7 @@ import fs from 'fs';
 import * as store from '../core/db/store';
 import { getAllSites } from '../core/browser/registry';
 import { scheduleTask, clearTask, rescheduleTask } from '../core/scheduler/scheduler';
-import { verifyTask, isRunning } from '../core/browser/runner';
+import { verifyCredentials, isRunning } from '../core/browser/runner';
 import { events } from '../core/events';
 import { config, getGlobal } from '../core/config/manager';
 import { resolveDownloadDir, DEFAULT_PATH_TEMPLATE } from '../core/downloader/path';
@@ -144,23 +144,19 @@ export function setupRoutes(app: express.Application): void {
       res.status(400).json({ error: (err as Error).message });
       return;
     }
-    const task = store.addTask({ name: body.site, site: body.site, interval, cookies: body.cookies, customConfigJson: body.customConfigJson });
     try {
-      const { username, userId } = await verifyTask(task.id);
-      store.updateTask(task.id, { name: username, userId });
+      const { username, userId } = await verifyCredentials(body.site, body.cookies);
+      const task = store.addTask({ name: username, site: body.site, interval, cookies: body.cookies, customConfigJson: body.customConfigJson, userId });
       scheduleTask(store.getTask(task.id)!);
       store.addLog(task.id, 'info', `Task created: ${username} (${body.site})`);
       res.json(store.getTask(task.id));
     } catch (err) {
-      console.error('[route] verifyTask error:', (err as Error).message);
-      store.addLog(task.id, 'error', `Task creation failed: ${(err as Error).message}`);
-      store.deleteTask(task.id);
-      if (!res.headersSent) res.status(400).json({ error: (err as Error).message });
+      res.status(400).json({ error: (err as Error).message });
     }
   });
 
-  app.put('/api/tasks/:id', (req: Request, res: Response) => {
-    const body = req.body as { interval?: number; customConfigJson?: Record<string, unknown> };
+  app.put('/api/tasks/:id', async (req: Request, res: Response) => {
+    const body = req.body as { interval?: number; cookies?: string; customConfigJson?: Record<string, unknown> };
     if (body.interval !== undefined) {
       const interval = parseTaskInterval(body.interval, 1800);
       if (interval === null) { res.status(400).json({ error: 'interval must be at least 600 seconds' }); return; }
@@ -174,8 +170,18 @@ export function setupRoutes(app: express.Application): void {
         return;
       }
     }
-    const updated = store.updateTask(getId(req), req.body);
-    if (!updated) { res.status(404).json({ error: 'Not found' }); return; }
+    if (body.cookies) {
+      const task = store.getTask(getId(req));
+      if (!task) { res.status(404).json({ error: 'error.not_found' }); return; }
+      try {
+        await verifyCredentials(task.site, body.cookies);
+      } catch (err) {
+        res.status(400).json({ error: (err as Error).message });
+        return;
+      }
+    }
+    const updated = store.updateTask(getId(req), body);
+    if (!updated) { res.status(404).json({ error: 'error.not_found' }); return; }
     store.addLog(getId(req), 'info', 'Task config updated');
     rescheduleTask(updated.id);
     res.json(updated);
@@ -193,7 +199,7 @@ export function setupRoutes(app: express.Application): void {
     const taskId = getId(req);
     if (isRunning(taskId)) {
       store.addLog(taskId, 'warn', 'Duplicate run ignored, task already running');
-      res.status(409).json({ error: '任务正在执行中' }); return;
+      res.status(409).json({ error: 'error.task_running' }); return;
     }
     store.addLog(taskId, 'info', 'Manual run triggered');
     store.setTaskRunState(taskId, { nextRun: new Date().toISOString() });
@@ -213,6 +219,17 @@ export function setupRoutes(app: express.Application): void {
     store.addLog(taskId, 'info', paused ? 'Task paused' : 'Task resumed');
     events.emitTaskPaused(taskId, paused);
     res.json({ ok: true, paused });
+  });
+
+  app.post('/api/verify', async (req: Request, res: Response) => {
+    const { site, cookies } = req.body as { site?: string; cookies?: string };
+    if (!site || !cookies) { res.status(400).json({ ok: false, error: 'site and cookies required' }); return; }
+    try {
+      const { username, userId } = await verifyCredentials(site, cookies);
+      res.json({ ok: true, username, userId });
+    } catch (err) {
+      res.json({ ok: false, error: (err as Error).message });
+    }
   });
 
   app.get('/api/tasks/:id/downloads', (req: Request, res: Response) => {
