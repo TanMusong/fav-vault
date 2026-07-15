@@ -973,7 +973,8 @@
           var color = colors[item.level] || '#888';
           var row = document.createElement('div');
           row.style.cssText = 'padding:8px 16px;border-bottom:1px solid #1a1a1a;font-size:12px;font-family:monospace;display:flex;gap:12px;align-items:flex-start;';
-          row.innerHTML = '<span style="color:' + color + ';min-width:44px;flex-shrink:0;">[' + escapeHtml(item.level) + ']</span><span style="color:#666;min-width:140px;flex-shrink:0;">' + escapeHtml(item.time) + '</span><span style="color:#4db8ff;min-width:80px;flex-shrink:0;">' + escapeHtml(item.taskName) + '</span><span style="color:#ccc;word-break:break-all;">' + escapeHtml(item.message) + '</span>';
+          var localTime = item.time ? new Date(item.time + 'Z').toLocaleString() : item.time;
+          row.innerHTML = '<span style="color:' + color + ';min-width:44px;flex-shrink:0;">[' + escapeHtml(item.level) + ']</span><span style="color:#666;min-width:140px;flex-shrink:0;">' + escapeHtml(localTime) + '</span><span style="color:#4db8ff;min-width:80px;flex-shrink:0;">' + escapeHtml(item.taskName) + '</span><span style="color:#ccc;word-break:break-all;">' + escapeHtml(item.message) + '</span>';
           list.appendChild(row);
         });
         logsOffset += data.items.length;
