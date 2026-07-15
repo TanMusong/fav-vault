@@ -71,15 +71,13 @@ async function runTask(taskId: string): Promise<TaskResult> {
 		}
 		const browser = taskBrowser;
 
-		const domain = site.getCookieDomain();
-		const clearPage = await browser.newPage();
-		const existingCookies = await clearPage.cookies();
-		for (const c of existingCookies) {
-			if (c.domain.includes(domain.replace(/^\./, ''))) {
-				await clearPage.deleteCookie({ name: c.name, domain: c.domain });
-			}
+		const context = browser.defaultBrowserContext();
+		const existingCookies = await context.cookies();
+		if (existingCookies.length > 0) {
+			await context.deleteCookie(...existingCookies);
 		}
-		await clearPage.close().catch(() => {});
+
+		const domain = site.getCookieDomain();
 		await setBrowserCookies(browser, task.cookies, domain);
 		page = await browser.newPage();
 		await page.setViewport({ width: 1280, height: 800 });
