@@ -29,10 +29,10 @@ class TwitterSite extends BaseSite {
 		return { label: 'Cookie', placeholder: 'msg.cookie_placeholder_twitter', required: true };
 	}
 
-	public async checkLogin(page: Page): Promise<{ username: string; userId: string }> {
+	public async checkLogin(page: Page, timeout = 60000): Promise<{ username: string; userId: string }> {
 		let username = '', userId = '';
 		try {
-			await page.goto('https://x.com/home', { waitUntil: 'networkidle2', timeout: 60000 });
+			await page.goto('https://x.com/home', { waitUntil: 'networkidle2', timeout });
 			for (let i = 0; i < 10; i++) {
 				const result = await page.evaluate(() => {
 					const btn = document.querySelector('[data-testid="SideNav_AccountSwitcher_Button"]');
@@ -78,7 +78,7 @@ class TwitterSite extends BaseSite {
 		return { username, userId };
 	}
 
-	private async fetchItems(page: Page, skipIds?: string[]): Promise<{ items: TwitterItem[]; cursor: string | null }> {
+	private async fetchItems(page: Page, skipIds?: string[], timeout = 60000): Promise<{ items: TwitterItem[]; cursor: string | null }> {
 		let allItems: TwitterItem[] = [];
 		let lastCursor: string | null = null;
 
@@ -108,7 +108,7 @@ class TwitterSite extends BaseSite {
 
 		page.on('response', responseHandler);
 		try {
-			await page.goto(BOOKMARKS_URL, { waitUntil: 'networkidle2', timeout: 60000 });
+			await page.goto(BOOKMARKS_URL, { waitUntil: 'networkidle2', timeout });
 			for (let i = 0; i < 30 && allItems.length === 0; i++) {
 				await new Promise<void>(r => setTimeout(r, 1000));
 			}
@@ -129,7 +129,7 @@ class TwitterSite extends BaseSite {
 		page = await browser.newPage();
 		await page.setViewport({ width: 1280, height: 800 });
 
-		const { username } = await this.checkLogin(page);
+		const { username } = await this.checkLogin(page, ctx.timeout);
 		if (!username) {
 			ctx.addLog('warn', 'X login expired - checkLogin returned empty username');
 			return { state: 0, message: 'status.login_expired', downloaded: 0, failed: 0, total: 0, duration: Date.now() - startTime };
@@ -199,6 +199,9 @@ class TwitterSite extends BaseSite {
 						const result = await downloadFile(url, dest, {
 							cookies: task.cookies,
 							headers: { 'Referer': 'https://x.com/' },
+							timeout: ctx.timeout,
+							maxRetries: ctx.maxRetries,
+							proxy: ctx.proxy,
 							onProgress: (downloaded, expected) => {
 								files[fi].fileSize = downloaded;
 								files[fi].fileExpectedSize = expected;
@@ -246,7 +249,7 @@ class TwitterSite extends BaseSite {
 			let maxRequestCount = 10;
 
 			do {
-				fetched = await this.fetchItems(page, skipIds);
+				fetched = await this.fetchItems(page, skipIds, ctx.timeout);
 				maxRequestCount--;
 				const executables: Executable[] = fetched.items.map(item => ({ execute: () => processItem(item) }));
 				await runPool(executables, concurrency);

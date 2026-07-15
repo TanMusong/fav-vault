@@ -184,11 +184,57 @@
               <label>Cookie</label>
               <textarea id="f-cookie" rows="4" placeholder="" data-i18n-placeholder="modal.cookie_placeholder" style="width:100%;padding:8px 12px;background:#0f0f0f;border:1px solid #333;border-radius:8px;color:#fff;font-size:12px;font-family:monospace;resize:vertical;outline:none;"></textarea>
             </div>
-            <div class="field">
-              <label data-i18n="modal.download_path"></label>
-              <input id="f-download-path" type="text" value="{type}/{user}/{author_id}_{author}">
-              <div style="font-size:11px;color:#666;margin-top:4px;line-height:1.6;">
-                <span data-i18n="modal.path_vars"></span>
+            <div class="advanced-toggle" onclick="toggleAdvanced()">
+              <i class="fa-solid fa-gear"></i>
+              <span data-i18n="modal.advanced"></span>
+              <i class="fa-solid fa-chevron-down advanced-arrow" id="advanced-arrow"></i>
+            </div>
+            <div id="advanced-settings" style="display:none;">
+              <div class="field">
+                <label data-i18n="modal.download_path"></label>
+                <input id="f-download-path" type="text" value="{type}/{user}/{author_id}_{author}">
+                <div style="font-size:11px;color:#666;margin-top:4px;line-height:1.6;">
+                  <span data-i18n="modal.path_vars"></span>
+                </div>
+              </div>
+              <div class="field">
+                <label data-i18n="modal.max_concurrent"></label>
+                <input id="f-max-concurrent" type="number" value="3" min="1" max="10">
+              </div>
+              <div class="field">
+                <label data-i18n="modal.timeout"></label>
+                <input id="f-timeout" type="number" value="60" min="10" max="600">
+                <div style="font-size:11px;color:#666;margin-top:2px;"><span data-i18n="modal.timeout_hint"></span></div>
+              </div>
+              <div class="field">
+                <label data-i18n="modal.max_retries"></label>
+                <input id="f-max-retries" type="number" value="3" min="0" max="10">
+              </div>
+              <div class="field">
+                <label data-i18n="modal.proxy"></label>
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <label class="switch">
+                    <input type="checkbox" id="f-proxy-enabled" onchange="toggleProxyFields()">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div id="proxy-fields" style="display:none;">
+                <div class="field">
+                  <label data-i18n="modal.proxy_type"></label>
+                  <select id="f-proxy-type">
+                    <option value="http">HTTP</option>
+                    <option value="socks5">SOCKS5</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label data-i18n="modal.proxy_host"></label>
+                  <input id="f-proxy-host" type="text" placeholder="127.0.0.1">
+                </div>
+                <div class="field">
+                  <label data-i18n="modal.proxy_port"></label>
+                  <input id="f-proxy-port" type="number" placeholder="1080">
+                </div>
               </div>
             </div>
           </div>
@@ -338,6 +384,64 @@
       if (_confirmResolve) { _confirmResolve(false); _confirmResolve = null; }
     }
 
+    function toggleAdvanced() {
+      var el = document.getElementById('advanced-settings');
+      var arrow = document.getElementById('advanced-arrow');
+      var isOpen = el.style.display !== 'none';
+      el.style.display = isOpen ? 'none' : 'block';
+      arrow.classList.toggle('open', !isOpen);
+    }
+
+    function toggleProxyFields() {
+      var enabled = document.getElementById('f-proxy-enabled').checked;
+      document.getElementById('proxy-fields').style.display = enabled ? '' : 'none';
+    }
+
+    function getAdvancedConfig() {
+      return {
+        downloadPath: document.getElementById('f-download-path').value.trim() || '{type}/{user}/{author_id}_{author}',
+        maxConcurrent: parseInt(document.getElementById('f-max-concurrent').value) || 3,
+        timeout: parseInt(document.getElementById('f-timeout').value) || 120,
+        maxRetries: parseInt(document.getElementById('f-max-retries').value) || 3,
+        proxy: {
+          enabled: document.getElementById('f-proxy-enabled').checked,
+          type: document.getElementById('f-proxy-type').value,
+          host: document.getElementById('f-proxy-host').value.trim(),
+          port: parseInt(document.getElementById('f-proxy-port').value) || 0
+        }
+      };
+    }
+
+    function setAdvancedConfig(cfg) {
+      if (!cfg) cfg = {};
+      document.getElementById('f-download-path').value = cfg.downloadPath || '{type}/{user}/{author_id}_{author}';
+      document.getElementById('f-max-concurrent').value = cfg.maxConcurrent || 3;
+      document.getElementById('f-timeout').value = cfg.timeout || 60;
+      document.getElementById('f-max-retries').value = cfg.maxRetries || 3;
+      var proxy = cfg.proxy || {};
+      document.getElementById('f-proxy-enabled').checked = !!proxy.enabled;
+      document.getElementById('f-proxy-type').value = proxy.type || 'http';
+      document.getElementById('f-proxy-host').value = proxy.host || '';
+      document.getElementById('f-proxy-port').value = proxy.port || '';
+      toggleProxyFields();
+      document.getElementById('advanced-settings').style.display = 'none';
+      document.getElementById('advanced-arrow').classList.remove('open');
+    }
+
+    function resetAdvancedConfig() {
+      document.getElementById('f-download-path').value = '{type}/{user}/{author_id}_{author}';
+      document.getElementById('f-max-concurrent').value = 3;
+      document.getElementById('f-timeout').value = 60;
+      document.getElementById('f-max-retries').value = 3;
+      document.getElementById('f-proxy-enabled').checked = false;
+      document.getElementById('f-proxy-type').value = 'http';
+      document.getElementById('f-proxy-host').value = '';
+      document.getElementById('f-proxy-port').value = '';
+      toggleProxyFields();
+      document.getElementById('advanced-settings').style.display = 'none';
+      document.getElementById('advanced-arrow').classList.remove('open');
+    }
+
     function checkInterval() {
       const v = parseInt(document.getElementById('f-interval').value) || 0;
       document.getElementById('interval-hint').classList.toggle('show', v > 0 && v < 10);
@@ -367,12 +471,11 @@
       document.getElementById('modal-title').textContent = _t('modal.new_task');
       document.getElementById('f-interval').value = 30;
       document.getElementById('f-cookie').value = '';
-      document.getElementById('f-download-path').value = '{type}/{user}/{author_id}_{author}';
       document.getElementById('interval-hint').classList.remove('show');
       document.getElementById('f-interval').closest('.field').style.display = '';
       document.getElementById('f-cookie').closest('.field').style.display = '';
-      document.getElementById('f-download-path').closest('.field').style.display = '';
       document.getElementById('site-disabled-hint').style.display = 'none';
+      resetAdvancedConfig();
       var btn = document.querySelector('.modal-footer .btn-primary');
       btn.disabled = false;
       btn.textContent = _t('modal.create');
@@ -406,7 +509,7 @@
       const res = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ site: siteName, interval: interval * 60, cookies, customConfigJson: { downloadPath: document.getElementById('f-download-path').value.trim() || '{type}/{user}/{author_id}_{author}' } })
+        body: JSON.stringify({ site: siteName, interval: interval * 60, cookies, customConfigJson: getAdvancedConfig() })
       });
       const data = await res.json();
       btn.textContent = _t('modal.create');
@@ -966,13 +1069,11 @@
       document.getElementById('modal-title').textContent = _t('modal.edit_task');
       document.getElementById('f-interval').value = Math.floor(task.interval / 60);
       document.getElementById('f-cookie').value = '';
-      var pathTemplate = (task.customConfigJson && task.customConfigJson.downloadPath) || '{type}/{user}/{author_id}_{author}';
-      document.getElementById('f-download-path').value = pathTemplate;
       document.getElementById('interval-hint').classList.remove('show');
       document.getElementById('f-interval').closest('.field').style.display = '';
       document.getElementById('f-cookie').closest('.field').style.display = '';
-      document.getElementById('f-download-path').closest('.field').style.display = '';
       document.getElementById('site-disabled-hint').style.display = 'none';
+      setAdvancedConfig(task.customConfigJson || {});
       document.querySelector('.modal-footer .btn-primary').disabled = false;
       document.getElementById('modal-overlay').classList.add('active');
       selectSite(task.site);
@@ -990,13 +1091,12 @@
       var interval = parseInt(document.getElementById('f-interval').value) || 30;
       if (interval < 10) return showMsg(_t('msg.interval_short'));
       var cookies = document.getElementById('f-cookie')?.value?.trim() || '';
-      var downloadPath = document.getElementById('f-download-path').value.trim() || '{type}/{user}/{author_id}_{author}';
 
       var btn = document.querySelector('.modal-footer .btn-primary');
       btn.textContent = _t('msg.saving');
       btn.disabled = true;
 
-      var body = { interval: interval * 60, customConfigJson: { downloadPath: downloadPath } };
+      var body = { interval: interval * 60, customConfigJson: getAdvancedConfig() };
       if (cookies) body.cookies = cookies;
 
       const res = await fetch('/api/tasks/' + currentTaskId, {

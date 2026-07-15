@@ -22,10 +22,10 @@ class DouyinSite extends BaseSite {
 		});
 	}
 
-	public async checkLogin(page: Page): Promise<{ username: string; userId: string }> {
+	public async checkLogin(page: Page, timeout = 60000): Promise<{ username: string; userId: string }> {
 		let username = '', userId = '';
 		try {
-			await page.goto(COLLECTION_URL, { waitUntil: 'networkidle2', timeout: 30000 });
+			await page.goto(COLLECTION_URL, { waitUntil: 'networkidle2', timeout });
 			for (let i = 0; i < 10; i++) {
 				const result = await page.evaluate(() => {
 					const nameEl = document.querySelector('[data-e2e="user-info"] h1')
@@ -77,7 +77,7 @@ class DouyinSite extends BaseSite {
 		page = await browser.newPage();
 		await page.setViewport({ width: 1280, height: 800 });
 
-		const { username } = await this.checkLogin(page);
+		const { username } = await this.checkLogin(page, ctx.timeout);
 		if (!username) {
 			ctx.addLog('warn', 'Douyin login expired');
 			return { state: 0, message: 'status.login_expired', downloaded: 0, failed: 0, total: 0, duration: Date.now() - startTime };
@@ -130,6 +130,9 @@ class DouyinSite extends BaseSite {
 						const result = await downloadFile(url, dest, {
 							cookies: task.cookies,
 							headers: { 'Referer': 'https://www.douyin.com/', 'Origin': 'https://www.douyin.com' },
+							timeout: ctx.timeout,
+							maxRetries: ctx.maxRetries,
+							proxy: ctx.proxy,
 							onProgress: (downloaded, expected) => {
 								files[fi].fileSize = downloaded;
 								files[fi].fileExpectedSize = expected;

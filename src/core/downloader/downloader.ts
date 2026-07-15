@@ -1,6 +1,7 @@
 import fs from 'fs';
 import { Readable } from 'stream';
 import { pipeline } from 'stream/promises';
+import { ProxyAgent } from 'undici';
 
 export function normalizeFilename(name: string, options: { replacementChar?: string; maxLength?: number } = {}): string {
 	const { replacementChar = '_', maxLength = 255 } = options;
@@ -41,6 +42,7 @@ interface DownloadOptions {
 	headers?: Record<string, string>;
 	timeout?: number;
 	maxRetries?: number;
+	proxy?: { enabled: boolean; type: string; host: string; port: number };
 	onProgress?: (downloaded: number, expected: number) => void;
 }
 
@@ -50,7 +52,7 @@ interface DownloadResult {
 }
 
 export async function downloadFile(url: string, destPath: string, options: DownloadOptions): Promise<DownloadResult | null> {
-	const { cookies, headers: extraHeaders = {}, timeout = 120000, maxRetries = 3, onProgress } = options;
+	const { cookies, headers: extraHeaders = {}, timeout = 120000, maxRetries = 3, proxy, onProgress } = options;
 
 	let alreadyDownloaded = 0;
 	try {
@@ -59,6 +61,13 @@ export async function downloadFile(url: string, destPath: string, options: Downl
 	} catch (_e) { /* no partial file */ }
 
 	let totalDownloaded = alreadyDownloaded;
+
+	const dispatcher = proxy?.enabled && proxy.host && proxy.port
+		? new ProxyAgent(`${proxy.type || 'http'}://${proxy.host}:${proxy.port}`)
+		: undefined;
+
+	// Proxy for downloads: browser-level proxy handles most requests via Chrome's --proxy-server flag
+	// For direct Node.js fetch downloads, proxy support requires undici package (optional)
 
 	for (let attempt = 0; attempt < maxRetries; attempt++) {
 		if (attempt > 0) {
@@ -78,11 +87,13 @@ export async function downloadFile(url: string, destPath: string, options: Downl
 					reqHeaders['Range'] = 'bytes=' + alreadyDownloaded + '-';
 				}
 
-				const resp = await fetch(url, {
+				const fetchOptions: RequestInit = {
 					headers: reqHeaders,
 					signal: controller.signal,
 					redirect: 'follow'
-				});
+				};
+				if (dispatcher) (fetchOptions as any).dispatcher = dispatcher;
+				const resp = await fetch(url, fetchOptions);
 
 				const isResume = resp.status === 206;
 				if (!resp.ok && !isResume) continue;

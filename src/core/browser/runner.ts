@@ -1,8 +1,8 @@
-import { getBrowser } from './puppeteer';
+import { getBrowser, launchBrowser } from './puppeteer';
 import { getSite } from './registry';
 import * as store from '../db/store';
 import type { TaskResult } from '../../types';
-import type { Page } from 'puppeteer-core';
+import type { Page, Browser } from 'puppeteer-core';
 import type { TaskContext } from './sites/base';
 import { config } from '../config/manager';
 import { events } from '../events';
@@ -55,9 +55,22 @@ async function runTask(taskId: string): Promise<TaskResult> {
 	runningTasks.add(taskId);
 	const startTime = Date.now();
 	let page: Page | null = null;
+	let taskBrowser: Browser | null = null;
+	let ownBrowser = false;
 
 	try {
-		const browser = await getBrowser(taskId);
+		const proxyConfig = (task.customConfigJson as Record<string, unknown>)?.proxy as { enabled?: boolean; type?: string; host?: string; port?: number } | undefined;
+		const useProxy = !!(proxyConfig?.enabled && proxyConfig?.host && proxyConfig?.port);
+		const proxyServer = useProxy ? `${proxyConfig.type || 'http'}://${proxyConfig.host}:${proxyConfig.port}` : undefined;
+
+		if (proxyServer) {
+			taskBrowser = await launchBrowser(proxyServer);
+			ownBrowser = true;
+		} else {
+			taskBrowser = await getBrowser(taskId);
+		}
+		const browser = taskBrowser;
+
 		const domain = site.getCookieDomain();
 		const clearPage = await browser.newPage();
 		const existingCookies = await clearPage.cookies();
@@ -72,13 +85,16 @@ async function runTask(taskId: string): Promise<TaskResult> {
 		await page.setViewport({ width: 1280, height: 800 });
 
 		events.emitTaskStarted(taskId, task.name);
-		store.addLog(taskId, 'info', `Task started: ${task.name}`);
+		store.addLog(taskId, 'info', `Task started: ${task.name}${proxyServer ? ' (proxy: ' + proxyServer + ')' : ''}`);
 
 		const ctx: TaskContext = {
 			taskId,
 			task,
 			browser,
-			concurrency: config.maxConcurrent,
+			concurrency: (task.customConfigJson as Record<string, unknown>)?.maxConcurrent as number || config.maxConcurrent,
+			timeout: ((task.customConfigJson as Record<string, unknown>)?.timeout as number || 60) * 1000,
+			maxRetries: (task.customConfigJson as Record<string, unknown>)?.maxRetries as number || 3,
+			proxy: { enabled: useProxy || false, type: proxyConfig?.type || 'http', host: proxyConfig?.host || '', port: proxyConfig?.port || 0 },
 			downloadDir: config.downloadDir,
 			addDownload: (data) => {
 				store.addDownload(taskId, data);
@@ -113,6 +129,7 @@ async function runTask(taskId: string): Promise<TaskResult> {
 	} finally {
 		runningTasks.delete(taskId);
 		if (page) await page.close().catch(() => {});
+		if (ownBrowser && taskBrowser) await taskBrowser.close().catch(() => {});
 	}
 }
 
