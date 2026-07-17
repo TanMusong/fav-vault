@@ -112,6 +112,13 @@ async function runTask(taskId: string): Promise<TaskResult> {
 
 		const result = await site.executeTask(ctx);
 
+		// Save updated cookies back to database
+		try {
+			const updatedCookies = await taskBrowser.defaultBrowserContext().cookies();
+			const cookieStr = updatedCookies.map(c => `${c.name}=${c.value}`).join('; ');
+			if (cookieStr) store.updateTask(taskId, { cookies: cookieStr });
+		} catch (_e) { /* ignore cookie save errors */ }
+
 		store.setTaskRunState(taskId, { last_state: result.state });
 		store.addLog(taskId, 'info', `Task completed: ${task.name}, downloaded ${result.downloaded}, failed ${result.failed}, duration ${result.duration}ms`);
 		events.emitTaskCompleted(taskId, result);
