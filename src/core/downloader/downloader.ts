@@ -106,6 +106,7 @@ export async function downloadFile(url: string, destPath: string, options: Downl
 				const nodeStream = Readable.fromWeb(body as any);
 				const ws = fs.createWriteStream(destPath, { flags: isResume ? 'a' : 'w' });
 
+				if (!isResume) totalDownloaded = 0;
 				nodeStream.on('data', (chunk: Buffer) => {
 					totalDownloaded += chunk.length;
 					if (onProgress) onProgress(totalDownloaded, expectedSize);
