@@ -197,6 +197,6 @@ http://localhost:5000
 
 如果觉得本项目有帮助，欢迎请我喝杯咖啡：
 
-<a href="https://www.afdian.com/a/tanmusong"><img src="https://pic1.afdiancdn.com/static/img/welcome/button-sponsorme.png" height="40"></a>
+<a href="https://www.afdian.com/a/tanmusong" target="_blank"><img src="https://pic1.afdiancdn.com/static/img/welcome/button-sponsorme.png" height="40"></a>
 
-<a href="https://ko-fi.com/tanmusong"><img src="https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_blue.png" height="40"></a>
+<a href="https://ko-fi.com/tanmusong" target="_blank"><img src="https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_blue.png" height="40"></a>
