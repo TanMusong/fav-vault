@@ -190,3 +190,13 @@ http://localhost:5000
 - Cookie 仅用于本地登录态维持
 - 不上传任何第三方服务器
 - 所有数据均存储在本地
+
+---
+
+## ☕ 赞助
+
+如果觉得本项目有帮助，欢迎请我喝杯咖啡：
+
+<a href="https://www.afdian.com/a/tanmusong"><img src="https://pic1.afdiancdn.com/static/img/welcome/button-sponsorme.png" height="40"></a>
+
+<a href="https://ko-fi.com/tanmusong"><img src="https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_blue.png" height="40"></a>

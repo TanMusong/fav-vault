@@ -190,3 +190,13 @@ Default template: `{type}/{user}/{author_id}_{author}`
 - Cookies are used only for local session authentication
 - No data is uploaded to third-party servers
 - All data stored locally
+
+---
+
+## ☕ Sponsor
+
+If you find this project helpful, consider buying me a coffee:
+
+<a href="https://ko-fi.com/tanmusong"><img src="https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_blue.png" height="40"></a>
+
+<a href="https://www.afdian.com/a/tanmusong"><img src="https://pic1.afdiancdn.com/static/img/welcome/button-sponsorme.png" height="40"></a>
