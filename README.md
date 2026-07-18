@@ -16,7 +16,8 @@ Your bookmarks are no longer just a static list — they become a continuously r
 ## ⚠️ Warning
 
 This project may trigger social media risk-control rules and carries unpredictable risks. Use with caution.  
-The program will **remove corresponding records** after successful downloads.  
+The program will **unfavorite/unbookmark** each post after processing.  
+Login credentials are stored in the local database — please keep the database file secure.  
 This tool is for learning and technical exchange only. Please comply with platform rules and applicable laws.
 
 ---
