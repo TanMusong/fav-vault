@@ -47,6 +47,7 @@ Click file names to open inline preview for images and videos. Supports arrow ke
 |----------|--------|--------|
 | Douyin | ✅ Supported | Favorites |
 | Twitter / X | ✅ Supported | Bookmarks |
+| Instagram | ✅ Supported | Saved Posts |
 
 ---
 
