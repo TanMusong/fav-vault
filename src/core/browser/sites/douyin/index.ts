@@ -80,7 +80,7 @@ class DouyinSite extends BaseSite {
 		const { username } = await this.checkLogin(page, ctx.timeout);
 		if (!username) {
 			ctx.addLog('warn', 'Douyin login expired');
-			return { state: 0, message: 'status.login_expired', downloaded: 0, failed: 0, total: 0, duration: Date.now() - startTime };
+			return { state: 2, message: 'status.login_expired', downloaded: 0, failed: 0, total: 0, duration: Date.now() - startTime };
 		}
 		let downloaded = 0, failed = 0;
 		const skipIds: string[] = [];
@@ -130,7 +130,6 @@ class DouyinSite extends BaseSite {
 						const result = await downloadFile(url, dest, {
 							cookies: task.cookies,
 							headers: { 'Referer': 'https://www.douyin.com/', 'Origin': 'https://www.douyin.com' },
-							timeout: ctx.timeout,
 							maxRetries: ctx.maxRetries,
 							proxy: ctx.proxy,
 							onProgress: (downloaded, expected) => {

@@ -132,7 +132,7 @@ class TwitterSite extends BaseSite {
 		const { username } = await this.checkLogin(page, ctx.timeout);
 		if (!username) {
 			ctx.addLog('warn', 'X login expired - checkLogin returned empty username');
-			return { state: 0, message: 'status.login_expired', downloaded: 0, failed: 0, total: 0, duration: Date.now() - startTime };
+			return { state: 2, message: 'status.login_expired', downloaded: 0, failed: 0, total: 0, duration: Date.now() - startTime };
 		}
 		ctx.addLog('info', `X login OK: ${username}`);
 
@@ -199,7 +199,6 @@ class TwitterSite extends BaseSite {
 						const result = await downloadFile(url, dest, {
 							cookies: task.cookies,
 							headers: { 'Referer': 'https://x.com/' },
-							timeout: ctx.timeout,
 							maxRetries: ctx.maxRetries,
 							proxy: ctx.proxy,
 							onProgress: (downloaded, expected) => {

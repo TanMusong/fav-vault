@@ -40,7 +40,6 @@ export function normalizeFilename(name: string, options: { replacementChar?: str
 interface DownloadOptions {
 	cookies: string;
 	headers?: Record<string, string>;
-	timeout?: number;
 	maxRetries?: number;
 	proxy?: { enabled: boolean; type: string; host: string; port: number };
 	onProgress?: (downloaded: number, expected: number) => void;
@@ -52,7 +51,7 @@ interface DownloadResult {
 }
 
 export async function downloadFile(url: string, destPath: string, options: DownloadOptions): Promise<DownloadResult | null> {
-	const { cookies, headers: extraHeaders = {}, timeout = 120000, maxRetries = 3, proxy, onProgress } = options;
+	const { cookies, headers: extraHeaders = {}, maxRetries = 3, proxy, onProgress } = options;
 
 	let alreadyDownloaded = 0;
 	try {
@@ -74,57 +73,49 @@ export async function downloadFile(url: string, destPath: string, options: Downl
 			await new Promise(r => setTimeout(r, 1000 * attempt));
 		}
 		try {
-			const controller = new AbortController();
-			const timer = setTimeout(() => controller.abort(), timeout);
-
-			try {
-				const reqHeaders: Record<string, string> = {
-					'Cookie': cookies,
-					'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36',
-					...extraHeaders
-				};
-				if (alreadyDownloaded > 0) {
-					reqHeaders['Range'] = 'bytes=' + alreadyDownloaded + '-';
-				}
-
-				const fetchOptions: RequestInit = {
-					headers: reqHeaders,
-					signal: controller.signal,
-					redirect: 'follow'
-				};
-				if (dispatcher) (fetchOptions as any).dispatcher = dispatcher;
-				const resp = await fetch(url, fetchOptions);
-
-				const isResume = resp.status === 206;
-				if (!resp.ok && !isResume) continue;
-
-				const contentLength = parseInt(resp.headers.get('content-length') || '0', 10) || 0;
-				const expectedSize = isResume ? alreadyDownloaded + contentLength : contentLength;
-				const body = resp.body;
-				if (!body) continue;
-
-				const nodeStream = Readable.fromWeb(body as any);
-				const ws = fs.createWriteStream(destPath, { flags: isResume ? 'a' : 'w' });
-
-				if (!isResume) totalDownloaded = 0;
-				nodeStream.on('data', (chunk: Buffer) => {
-					totalDownloaded += chunk.length;
-					if (onProgress) onProgress(totalDownloaded, expectedSize);
-				});
-
-				await pipeline(nodeStream, ws);
-
-				if (totalDownloaded > 1000) {
-					return { fileSize: totalDownloaded, expectedSize };
-				}
-				try { fs.unlinkSync(destPath); } catch (_e) { /* */ }
-				totalDownloaded = 0;
-				alreadyDownloaded = 0;
-			} finally {
-				clearTimeout(timer);
+			const reqHeaders: Record<string, string> = {
+				'Cookie': cookies,
+				'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36',
+				...extraHeaders
+			};
+			if (alreadyDownloaded > 0) {
+				reqHeaders['Range'] = 'bytes=' + alreadyDownloaded + '-';
 			}
+
+			const fetchOptions: RequestInit = {
+				headers: reqHeaders,
+				redirect: 'follow'
+			};
+			if (dispatcher) (fetchOptions as any).dispatcher = dispatcher;
+			const resp = await fetch(url, fetchOptions);
+
+			const isResume = resp.status === 206;
+			if (!resp.ok && !isResume) continue;
+
+			const contentLength = parseInt(resp.headers.get('content-length') || '0', 10) || 0;
+			const expectedSize = isResume ? alreadyDownloaded + contentLength : contentLength;
+			const body = resp.body;
+			if (!body) continue;
+
+			const nodeStream = Readable.fromWeb(body as any);
+			const ws = fs.createWriteStream(destPath, { flags: isResume ? 'a' : 'w' });
+
+			if (!isResume) totalDownloaded = 0;
+			nodeStream.on('data', (chunk: Buffer) => {
+				totalDownloaded += chunk.length;
+				if (onProgress) onProgress(totalDownloaded, expectedSize);
+			});
+
+			await pipeline(nodeStream, ws);
+
+			if (totalDownloaded > 1000) {
+				return { fileSize: totalDownloaded, expectedSize };
+			}
+			try { fs.unlinkSync(destPath); } catch (_e) { /* */ }
+			totalDownloaded = 0;
+			alreadyDownloaded = 0;
 		} catch (err: any) {
-			if (err.name === 'AbortError') continue;
+			// Retry on any error
 		}
 	}
 	try { fs.unlinkSync(destPath); } catch (_e) { /* */ }

@@ -152,7 +152,7 @@ class InstagramSite extends BaseSite {
 		const { username, userId } = await this.checkLogin(page, ctx.timeout);
 		if (!userId) {
 			ctx.addLog('warn', 'Instagram login expired');
-			return { state: 0, message: 'status.login_expired', downloaded: 0, failed: 0, total: 0, duration: Date.now() - startTime };
+			return { state: 2, message: 'status.login_expired', downloaded: 0, failed: 0, total: 0, duration: Date.now() - startTime };
 		}
 		ctx.addLog('info', `Instagram login OK: ${username} (${userId})`);
 
@@ -221,7 +221,6 @@ class InstagramSite extends BaseSite {
 						const result = await downloadFile(url, dest, {
 							cookies: task.cookies,
 							headers: { 'Referer': 'https://www.instagram.com/' },
-							timeout: ctx.timeout,
 							maxRetries: ctx.maxRetries,
 							proxy: ctx.proxy,
 							onProgress: (downloaded, expected) => {
