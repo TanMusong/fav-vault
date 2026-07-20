@@ -127,7 +127,7 @@ async function runTask(taskId: string): Promise<TaskResult> {
 	} catch (err) {
 		const message = (err as Error).message;
 		store.addLog(taskId, 'error', message);
-		const result: TaskResult = { state: 0, message, downloaded: 0, failed: 0, total: 0, duration: Date.now() - startTime };
+		const result: TaskResult = { state: 2, message, downloaded: 0, failed: 0, total: 0, duration: Date.now() - startTime };
 		store.setTaskRunState(taskId, { last_state: result.state });
 		events.emitTaskFailed(taskId, message);
 		throw err;

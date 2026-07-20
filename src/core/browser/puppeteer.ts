@@ -1,5 +1,9 @@
-import puppeteer, { type Browser } from 'puppeteer-core';
+import puppeteerExtra from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import type { Browser } from 'puppeteer-core';
 import { config } from '../config/manager';
+
+puppeteerExtra.use(StealthPlugin());
 
 function findChrome(): string {
 	if (config.chromePath) return config.chromePath;
@@ -30,7 +34,7 @@ export async function launchBrowser(proxyServer?: string): Promise<Browser> {
 	if (proxyServer) {
 		launchOptions.args.push('--proxy-server=' + proxyServer);
 	}
-	return puppeteer.launch(launchOptions);
+	return puppeteerExtra.launch(launchOptions);
 }
 
 export async function closeBrowser(taskId: string): Promise<void> {
