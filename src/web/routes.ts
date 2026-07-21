@@ -109,8 +109,7 @@ export function setupRoutes(app: express.Application): void {
     const site = sites.find(s => s.name === task.site);
     const siteColor = site?.color || '#888';
     const siteLabel = site?.label || task.site;
-    const downloads = store.getDownloads(taskId).slice(0, 20);
-    const downloadsTotal = store.getDownloads(taskId).length;
+    const { items: downloads, total: downloadsTotal } = store.getDownloads(taskId, 20, 0);
     res.render('detail', { task, sites, siteColor, siteLabel, downloads, downloadsTotal });
   });
 
@@ -239,8 +238,8 @@ export function setupRoutes(app: express.Application): void {
   app.get('/api/tasks/:id/downloads', (req: Request, res: Response) => {
     const offset = parseInt(typeof req.query.offset === 'string' ? req.query.offset : '0', 10) || 0;
     const limit = parseInt(typeof req.query.limit === 'string' ? req.query.limit : '20', 10) || 20;
-    const all = store.getDownloads(getId(req));
-    res.json({ total: all.length, items: all.slice(offset, offset + limit) });
+    const all = store.getDownloads(getId(req), limit, offset);
+    res.json({ total: all.total, items: all.items });
   });
 
   app.delete('/api/tasks/:id/downloads', (req: Request, res: Response) => {
@@ -272,7 +271,7 @@ export function setupRoutes(app: express.Application): void {
     const filename = req.params.filename as string;
     const task = store.getTask(taskId);
     if (!task) { res.status(404).json({ error: 'task not found' }); return; }
-    const downloads = store.getDownloads(taskId);
+    const { items: downloads } = store.getDownloads(taskId);
     const dl = downloads.find(d => d.post_id === postId);
     if (!dl) { res.status(404).json({ error: 'download not found' }); return; }
     const file = dl.files.find(f => f.filename === filename && f.fileStatus === 'success');

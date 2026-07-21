@@ -234,23 +234,28 @@ interface DownloadDbRow {
 	created_at: string;
 }
 
-function getDownloads(taskId: string): DownloadRecord[] {
+function getDownloads(taskId: string, limit?: number, offset?: number): { total: number; items: DownloadRecord[] } {
 	const db = getTaskDb(taskId);
-	return db.prepare('SELECT * FROM downloads ORDER BY created_at DESC').all().map((row) => {
-		const r = row as DownloadDbRow;
-		return {
-			id: r.id,
-			post_id: r.post_id,
-			author: r.author,
-			author_id: r.author_id,
-			desc: r.desc,
-			state: r.state,
-			state_message: r.state_message,
-			files: safeJsonParse<DownloadFile[]>(r.files_json, []),
-			data_json: safeJsonParse<Record<string, unknown>>(r.data_json, {}),
-			created_at: r.created_at
-		};
-	});
+	const total = (db.prepare('SELECT COUNT(*) as c FROM downloads').get() as Record<string, number>).c;
+	const query = limit !== undefined
+		? 'SELECT * FROM downloads ORDER BY created_at DESC LIMIT ? OFFSET ?'
+		: 'SELECT * FROM downloads ORDER BY created_at DESC';
+	const rows = limit !== undefined
+		? db.prepare(query).all(limit, offset || 0)
+		: db.prepare(query).all();
+	const items = (rows as DownloadDbRow[]).map((r) => ({
+		id: r.id,
+		post_id: r.post_id,
+		author: r.author,
+		author_id: r.author_id,
+		desc: r.desc,
+		state: r.state,
+		state_message: r.state_message,
+		files: safeJsonParse<DownloadFile[]>(r.files_json, []),
+		data_json: safeJsonParse<Record<string, unknown>>(r.data_json, {}),
+		created_at: r.created_at
+	}));
+	return { total, items };
 }
 
 function clearDownloads(taskId: string): void {
