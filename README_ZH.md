@@ -1,3 +1,6 @@
+> [!TIP]
+> 推荐使用更先进的 [VaultFlow](https://github.com/TanMusong/vault-flow)。
+
 # Fav Vault - 📦 将社交媒体收藏转为自动下载任务流
 
 简体中文 | [English](README.md)

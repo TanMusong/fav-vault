@@ -1,3 +1,6 @@
+> [!TIP]
+> We recommend using the more advanced [VaultFlow](https://github.com/TanMusong/vault-flow).
+
 # Fav Vault - 📦 Social Media Favorites to Auto-Download Pipeline
 
 [简体中文](README_ZH.md) | English
